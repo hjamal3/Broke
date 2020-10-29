@@ -46,8 +46,10 @@ Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const
 
 PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//create a player transform:
-	scene.transforms.emplace_back();
-	player.transform = &scene.transforms.back();
+	for (auto& transform : scene.transforms) {
+		if (transform.name == "Player") player.transform = &transform;
+	}
+	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
 
 	//create a player camera attached to a child of the player transform:
 	scene.transforms.emplace_back();
@@ -58,7 +60,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	player.camera->transform->parent = player.transform;
 
 	//player's eyes are 1.8 units above the ground:
-	player.camera->transform->position = glm::vec3(0.0f, 0.0f, 1.8f);
+	player.camera->transform->position = glm::vec3(0.0f, -30.0f, 20.0f);
 
 	//rotate camera facing direction (-z) to player facing direction (+y):
 	player.camera->transform->rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -140,7 +142,7 @@ void PlayMode::update(float elapsed) {
 	//player walking:
 	{
 		//combine inputs into a move:
-		constexpr float PlayerSpeed = 3.0f;
+		constexpr float PlayerSpeed = 30.0f;
 		glm::vec2 move = glm::vec2(0.0f);
 		if (left.pressed && !right.pressed) move.x =-1.0f;
 		if (!left.pressed && right.pressed) move.x = 1.0f;
