@@ -219,6 +219,7 @@ void PlayMode::update(float elapsed) {
 		// create player bounding box
 		bool collided = false;
 		Collision::AABB player_box = Collision::AABB(walkmesh->to_world_point(player.at), { 0.4f,0.15f,0.6f });
+		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
 		for (Collision::AABB & p : obstacles)
 		{
 			if (Collision::testCollision(p, player_box))
