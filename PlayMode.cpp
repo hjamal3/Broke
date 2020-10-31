@@ -264,12 +264,12 @@ void PlayMode::update(float elapsed) {
 				z_relative_threshold = 0.0f;
 			}
 		} else {
-			bool collided = false;
+			// bool collided = false;
 			for (Collision::AABB & p : obstacles)
 			{
 				if (Collision::testCollision(p, player_box))
 				{
-					collided = true;
+					// collided = true;
 					if (in_air && 2.0f * p.r.z <= z_relative) {
 						player.transform->position.z = player.transform->position.z - z_relative + p.r.z * 2.0f;
 						z_relative_threshold = 2.0f * p.r.z;
