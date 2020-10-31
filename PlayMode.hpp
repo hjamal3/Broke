@@ -29,7 +29,7 @@ struct PlayMode : Mode {
 	// jumping control
 	bool in_air = false;
 	bool on_platform = false;
-	float gravity = 0.08f;
+	float gravity = 30.0f;
 	float jump_up_velocity = 0.0f;
 	float z_relative = 0.0f;
 	float z_relative_threshold = 0.0f;

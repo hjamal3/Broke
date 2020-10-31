@@ -106,10 +106,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_SPACE) {
-			if (!in_air && !jump.pressed) {
+			if (!jump.pressed) {
 				jump.pressed = true;
-				in_air = true;
-				jump_up_velocity = 1.5f;
 				return true;
 			}
 		}
@@ -168,6 +166,12 @@ void PlayMode::update(float elapsed) {
 		if (!left.pressed && right.pressed) move.x = 1.0f;
 		if (down.pressed && !up.pressed) move.y =-1.0f;
 		if (!down.pressed && up.pressed) move.y = 1.0f;
+		if (jump.pressed) {
+			if (!in_air) {
+				in_air = true;
+				jump_up_velocity = 15.0f;
+			}
+		}
 
 		//make it so that moving diagonally doesn't go faster:
 		if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
@@ -238,8 +242,8 @@ void PlayMode::update(float elapsed) {
 
 		// check for jumping
 		if (in_air) {
-			jump_up_velocity -= gravity;
-			z_relative += jump_up_velocity;
+			jump_up_velocity -= gravity * elapsed;
+			z_relative += jump_up_velocity * elapsed;
 			if (z_relative <= z_relative_threshold) {
 				z_relative = z_relative_threshold;
 				jump_up_velocity = 0.0f;
