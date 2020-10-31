@@ -54,10 +54,11 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 		if (transform.name.find(str) != std::string::npos)
 		{
 			// create primitive
-			obstacles.emplace_back(Collision::AABB(transform.position, transform.scale*0.5f));
+			obstacles.emplace_back(Collision::AABB(transform.position, transform.scale));
 		}
 
 	}
+
 	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
 
 	//create a player camera attached to a child of the player transform:
