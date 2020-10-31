@@ -24,7 +24,16 @@ struct PlayMode : Mode {
 	struct Button {
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
-	} left, right, down, up;
+	} left, right, down, up, jump;
+
+	// jumping control
+	bool in_air = false;
+	bool on_platform = false;
+	float gravity = 0.08f;
+	float jump_up_velocity = 0.0f;
+	float z_relative = 0.0f;
+	float z_relative_threshold = 0.0f;
+	Collision::AABB *obstacle_box = nullptr;
 
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
