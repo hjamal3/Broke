@@ -48,6 +48,15 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//create a player transform:
 	for (auto& transform : scene.transforms) {
 		if (transform.name == "Player") player.transform = &transform;
+
+		// all Cube objects are obstacles
+		std::string str("Cube");
+		if (transform.name.find(str) != std::string::npos)
+		{
+			// create primitive
+			obstacles.emplace_back(Collision::AABB(transform.position, transform.scale*0.5f));
+		}
+
 	}
 	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
 
@@ -155,6 +164,9 @@ void PlayMode::update(float elapsed) {
 		//get move in world coordinate system:
 		glm::vec3 remain = player.transform->make_local_to_world() * glm::vec4(move.x, move.y, 0.0f, 0.0f);
 
+		// WalkPoint before moving
+		WalkPoint before = player.at;
+
 		//using a for() instead of a while() here so that if walkpoint gets stuck in
 		// some awkward case, code will not infinite loop:
 		for (uint32_t iter = 0; iter < 10; ++iter) {
@@ -202,17 +214,36 @@ void PlayMode::update(float elapsed) {
 			std::cout << "NOTE: code used full iteration budget for walking." << std::endl;
 		}
 
-		//update player's position to respect walking:
-		player.transform->position = walkmesh->to_world_point(player.at);
-
-		{ //update player's rotation to respect local (smooth) up-vector:
-			
-			glm::quat adjust = glm::rotation(
-				player.transform->rotation * glm::vec3(0.0f, 0.0f, 1.0f), //current up vector
-				walkmesh->to_world_smooth_normal(player.at) //smoothed up vector at walk location
-			);
-			player.transform->rotation = glm::normalize(adjust * player.transform->rotation);
+		// check if the new position leads to a collision
+		// create player bounding box
+		bool collided = false;
+		Collision::AABB player_box = Collision::AABB(walkmesh->to_world_point(player.at), { 0.4f,0.15f,0.6f });
+		for (Collision::AABB & p : obstacles)
+		{
+			if (Collision::testCollision(p, player_box))
+			{
+				collided = true;
+				// reset barycentric coords
+				player.at = before;
+				break;
+			}
 		}
+
+		if (!collided)
+		{
+			//update player's position to respect walking:
+			player.transform->position = walkmesh->to_world_point(player.at);
+
+			{ //update player's rotation to respect local (smooth) up-vector:
+
+				glm::quat adjust = glm::rotation(
+					player.transform->rotation * glm::vec3(0.0f, 0.0f, 1.0f), //current up vector
+					walkmesh->to_world_smooth_normal(player.at) //smoothed up vector at walk location
+				);
+				player.transform->rotation = glm::normalize(adjust * player.transform->rotation);
+			}
+		}
+
 
 		/*
 		glm::mat4x3 frame = camera->transform->make_local_to_parent();

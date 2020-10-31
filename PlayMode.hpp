@@ -2,6 +2,7 @@
 
 #include "Scene.hpp"
 #include "WalkMesh.hpp"
+#include "Collision.hpp"
 
 #include <glm/glm.hpp>
 
@@ -35,5 +36,12 @@ struct PlayMode : Mode {
 		Scene::Transform *transform = nullptr;
 		//camera is at player's head and will be pitched by mouse up/down motion:
 		Scene::Camera *camera = nullptr;
+
+		// Player contains a bounding box
+
 	} player;
+
+	// primitives info
+	std::vector<Collision::AABB> obstacles;
+
 };

@@ -109,6 +109,7 @@ GAME_NAMES =
 	Sound
 	load_wav
 	load_opus
+	Collision
 	;
 
 COMMON_NAMES =

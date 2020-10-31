@@ -32,6 +32,7 @@ namespace Collision
 	// axis aligned bounding box
 	struct AABB : Primitive
 	{
+		AABB();
 		AABB(glm::vec3 c_, glm::vec3 r_) : Primitive(PrimitiveType::AABB), c(c_), r(r_) {}
 		glm::vec3 c; // center
 		glm::vec3 r; // radius in x,y,z direction
@@ -40,26 +41,6 @@ namespace Collision
 	bool testAABBAABB(const AABB& a, const AABB& b);
 
 	bool testCollision(const Primitive& a, const Primitive& b);
-
-	// test collision between two AABB boxes
-	bool testAABBAABB(const AABB& a, const AABB& b)
-	{
-		//  Two AABBs only overlap if they overlap on all three axes
-		if (std::abs(a.c.x - b.c.x) > a.r.x + b.r.x) { return false; }
-		if (std::abs(a.c.y - b.c.y) > a.r.y + b.r.y) { return false; }
-		if (std::abs(a.c.z - b.c.z) > a.r.z + b.r.z) { return false; }
-		return true;
-	}
-
-	// general function, can add more primitive types here
-	bool testCollision(const Primitive& a, const Primitive& b)
-	{
-		if (a.type == PrimitiveType::AABB && b.type == PrimitiveType::AABB)
-		{
-			return testAABBAABB(static_cast<const AABB&>(a), static_cast<const AABB&>(b));
-		}
-		return false;
-	}
 }
 
 
