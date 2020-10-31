@@ -109,7 +109,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			if (!in_air && !jump.pressed) {
 				jump.pressed = true;
 				in_air = true;
-				jump_up_velocity = 0.9f;
+				jump_up_velocity = 1.5f;
 				return true;
 			}
 		}
@@ -245,6 +245,7 @@ void PlayMode::update(float elapsed) {
 				jump_up_velocity = 0.0f;
 				in_air = false;
 				on_platform = z_relative > 0.0f;
+
 			}
 			player.transform->position.z = player.transform->position.z + z_relative;
 		} else if (on_platform) {
@@ -270,8 +271,8 @@ void PlayMode::update(float elapsed) {
 				if (Collision::testCollision(p, player_box))
 				{
 					// collided = true;
-					if (in_air && 2.0f * p.r.z <= z_relative) {
-						player.transform->position.z = player.transform->position.z - z_relative + p.r.z * 2.0f;
+					if (in_air) {
+						// player.transform->position.z = player.transform->position.z - z_relative + p.r.z * 2.0f;
 						z_relative_threshold = 2.0f * p.r.z;
 						obstacle_box = &p;
 					} else {
