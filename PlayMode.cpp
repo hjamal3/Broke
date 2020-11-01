@@ -110,6 +110,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				jump.pressed = true;
 				return true;
 			}
+		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
+			slide.pressed = true;
+			z_relative = -0.5f;
+			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
@@ -126,6 +130,12 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_SPACE) {
 			jump.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
+			slide.pressed = false;
+			if (z_relative < 0.0f) {
+				z_relative = 0.0f;
+			}
 			return true;
 		}
 	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
@@ -160,12 +170,26 @@ void PlayMode::update(float elapsed) {
 	//player walking:
 	{
 		//combine inputs into a move:
-		constexpr float PlayerSpeed = 35.0f;
+		float PlayerSpeed = 35.0f;
 		glm::vec2 move = glm::vec2(0.0f);
-		if (left.pressed && !right.pressed) move.x =-1.0f;
-		if (!left.pressed && right.pressed) move.x = 1.0f;
-		if (down.pressed && !up.pressed) move.y =-1.0f;
-		if (!down.pressed && up.pressed) move.y = 1.0f;
+		
+		if (slide.pressed && !in_air) {
+			// when sliding, bypass WASD command and only charge in the direction the player faces
+			move.y = 1.0f;
+			PlayerSpeed *= 0.8f;
+			slide_duration -= elapsed;
+			if (slide_duration <= 0.0f) {
+				slide.pressed = false;
+				if (z_relative < 0.0f) z_relative = 0.0f;
+				slide_duration = 1.5f;
+			}
+		} else {
+			if (left.pressed && !right.pressed) move.x =-1.0f;
+			if (!left.pressed && right.pressed) move.x = 1.0f;
+			if (down.pressed && !up.pressed) move.y =-1.0f;
+			if (!down.pressed && up.pressed) move.y = 1.0f;
+		}
+
 		if (jump.pressed) {
 			if (!in_air) {
 				in_air = true;
@@ -252,7 +276,7 @@ void PlayMode::update(float elapsed) {
 
 			}
 			player.transform->position.z = player.transform->position.z + z_relative;
-		} else if (on_platform) {
+		} else {
 			player.transform->position.z = player.transform->position.z + z_relative;
 		}
 
@@ -287,19 +311,6 @@ void PlayMode::update(float elapsed) {
 				}
 			}
 		}
-
-		// if (collided) {
-		// 	//update player's position to respect walking:
-		// 	player.transform->position = walkmesh->to_world_point(player.at);
-		// 	{ //update player's rotation to respect local (smooth) up-vector:
-
-		// 		glm::quat adjust = glm::rotation(
-		// 			player.transform->rotation * glm::vec3(0.0f, 0.0f, 1.0f), //current up vector
-		// 			walkmesh->to_world_smooth_normal(player.at) //smoothed up vector at walk location
-		// 		);
-		// 		player.transform->rotation = glm::normalize(adjust * player.transform->rotation);
-		// 	}
-		// }
 		/*
 		glm::mat4x3 frame = camera->transform->make_local_to_parent();
 		glm::vec3 right = frame[0];
