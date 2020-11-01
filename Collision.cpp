@@ -11,6 +11,13 @@ bool Collision::testAABBAABB(const AABB& a, const AABB& b)
 	return true;
 }
 
+bool Collision::testAABBAABBXY(const AABB& a, const AABB& b)
+{
+	if (std::abs(a.c.x - b.c.x) > a.r.x + b.r.x + 0.5f) { return false; }
+	if (std::abs(a.c.y - b.c.y) > a.r.y + b.r.y + 0.5f) { return false; }
+	return true;
+}
+
 // general function, can add more primitive types here
 bool Collision::testCollision(const Primitive& a, const Primitive& b)
 {
@@ -19,4 +26,13 @@ bool Collision::testCollision(const Primitive& a, const Primitive& b)
 		return testAABBAABB(static_cast<const AABB&>(a), static_cast<const AABB&>(b));
 	}
 	return false;
+}
+
+bool Collision::testCollisionXY(const Primitive& a, const Primitive& b)
+{
+	if (a.type == PrimitiveType::AABB && b.type == PrimitiveType::AABB)
+	{
+		return testAABBAABBXY(static_cast<const AABB&>(a), static_cast<const AABB&>(b));
+	}
+	return false;	
 }
