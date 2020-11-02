@@ -83,6 +83,14 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 PlayMode::~PlayMode() {
 }
 
+void PlayMode::reset_sliding() {
+	slide.pressed = false;
+	sliding = false;
+	slide_duration = 1.5f;
+	slide_velocity = 0.0f;
+	if (z_relative < 0.0f) z_relative = 0.0f;
+}
+
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
 
 	if (evt.type == SDL_KEYDOWN) {
@@ -111,8 +119,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				return true;
 			}
 		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
-			slide.pressed = true;
-			z_relative = -0.5f;
+			if (!slide.pressed) {
+				slide.pressed = true;
+				z_relative = -0.5f;
+			}
 			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
@@ -132,9 +142,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			jump.pressed = false;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
-			slide.pressed = false;
-			if (z_relative < 0.0f) {
-				z_relative = 0.0f;
+			if (slide.pressed) {
+				reset_sliding();
 			}
 			return true;
 		}
@@ -173,16 +182,29 @@ void PlayMode::update(float elapsed) {
 		float PlayerSpeed = 35.0f;
 		glm::vec2 move = glm::vec2(0.0f);
 		
-		if (slide.pressed && !in_air) {
+		if (jump.pressed) {
+			if (!in_air) {
+				in_air = true;
+				jump_up_velocity = 15.0f;
+			}
+		}
+
+		if (slide.pressed && !sliding) {
+			sliding = true;
+			slide_velocity = PlayerSpeed * 0.8f;
+		}
+
+		if (sliding && !in_air) {
 			// when sliding, bypass WASD command and only charge in the direction the player faces
 			move.y = 1.0f;
-			PlayerSpeed *= 0.8f;
+			slide_velocity -= friction * elapsed;
 			slide_duration -= elapsed;
+			PlayerSpeed = slide_velocity;
 			if (slide_duration <= 0.0f) {
-				slide.pressed = false;
-				if (z_relative < 0.0f) z_relative = 0.0f;
-				slide_duration = 1.5f;
+				reset_sliding();
 			}
+		} else if (sliding && in_air) {
+			reset_sliding();
 		} else {
 			if (left.pressed && !right.pressed) move.x =-1.0f;
 			if (!left.pressed && right.pressed) move.x = 1.0f;
@@ -190,12 +212,6 @@ void PlayMode::update(float elapsed) {
 			if (!down.pressed && up.pressed) move.y = 1.0f;
 		}
 
-		if (jump.pressed) {
-			if (!in_air) {
-				in_air = true;
-				jump_up_velocity = 15.0f;
-			}
-		}
 
 		//make it so that moving diagonally doesn't go faster:
 		if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
@@ -275,26 +291,20 @@ void PlayMode::update(float elapsed) {
 					jump_up_velocity = 0.0f;
 					in_air = false;
 					on_platform = z_relative > 0.0f;
-				} else {
-					if (z_relative <= 0.0f) {
-						z_relative = 0.0f;
-						z_relative_threshold = 0.0f;
-						jump_up_velocity = 0.0f;
-						in_air = false;
-						on_platform = false;
-					}
+				} else if (z_relative <= 0.0f) {
+					z_relative = 0.0f;
+					z_relative_threshold = 0.0f;
+					jump_up_velocity = 0.0f;
+					in_air = false;
+					on_platform = false;
 				}
-				player.transform->position.z = player.transform->position.z + z_relative;
-			} else {
-				player.transform->position.z = player.transform->position.z + z_relative;
 			}
-		} else {
-			player.transform->position.z = player.transform->position.z + z_relative;
 		}
+		player.transform->position.z = player.transform->position.z + z_relative;
 
 		// check if the new position leads to a collision
 		// create player bounding box
-		Collision::AABB player_box = Collision::AABB(walkmesh->to_world_point(player.at), { 0.4f,0.15f,0.6f });
+		Collision::AABB player_box = Collision::AABB(player.transform->position, { 0.4f,0.15f,0.6f });
 		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
 		if (on_platform) {
 			assert(obstacle_box != nullptr);
