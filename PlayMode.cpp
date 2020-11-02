@@ -268,14 +268,26 @@ void PlayMode::update(float elapsed) {
 		if (in_air) {
 			jump_up_velocity -= gravity * elapsed;
 			z_relative += jump_up_velocity * elapsed;
-			if (z_relative <= z_relative_threshold) {
-				z_relative = z_relative_threshold;
-				jump_up_velocity = 0.0f;
-				in_air = false;
-				on_platform = z_relative > 0.0f;
-
+			if (z_relative <= z_relative_threshold && jump_up_velocity < 0.0f) {
+				float peak = z_relative + 0.5f * jump_up_velocity * jump_up_velocity / gravity;
+				if (peak > z_relative_threshold) {
+					z_relative = z_relative_threshold;
+					jump_up_velocity = 0.0f;
+					in_air = false;
+					on_platform = z_relative > 0.0f;
+				} else {
+					if (z_relative <= 0.0f) {
+						z_relative = 0.0f;
+						z_relative_threshold = 0.0f;
+						jump_up_velocity = 0.0f;
+						in_air = false;
+						on_platform = false;
+					}
+				}
+				player.transform->position.z = player.transform->position.z + z_relative;
+			} else {
+				player.transform->position.z = player.transform->position.z + z_relative;
 			}
-			player.transform->position.z = player.transform->position.z + z_relative;
 		} else {
 			player.transform->position.z = player.transform->position.z + z_relative;
 		}
@@ -293,24 +305,20 @@ void PlayMode::update(float elapsed) {
 				z_relative_threshold = 0.0f;
 			}
 		} else {
-			// bool collided = false;
 			for (Collision::AABB & p : obstacles)
 			{
 				if (Collision::testCollision(p, player_box))
 				{
-					// collided = true;
 					if (in_air) {
-						// player.transform->position.z = player.transform->position.z - z_relative + p.r.z * 2.0f;
 						z_relative_threshold = 2.0f * p.r.z;
 						obstacle_box = &p;
-					} else {
-						// reset barycentric coords
-						player.at = before;
 					}
+					player.at = before;
 					break;
 				}
 			}
 		}
+
 		/*
 		glm::mat4x3 frame = camera->transform->make_local_to_parent();
 		glm::vec3 right = frame[0];
