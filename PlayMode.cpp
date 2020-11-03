@@ -63,7 +63,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	std::string str("o_");
 	const auto& meshes = phonebank_meshes->meshes;
 	for (auto& mesh : meshes) {
-		if (mesh.first.find(str))// != std::string::npos && mesh.first.find("Cube.002") == std::string::npos && mesh.first.find("Cube.004") == std::string::npos && mesh.first.find("Cube.001") == std::string::npos)
+		if (mesh.first.find(str) != std::string::npos) //&& mesh.first.find("Cube.002") == std::string::npos && mesh.first.find("Cube.004") == std::string::npos && mesh.first.find("Cube.001") == std::string::npos)
 		{
 			auto& min = mesh.second.min;
 			auto& max = mesh.second.max;
