@@ -179,6 +179,17 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 			return true;
 		}
+	} else if (evt.type == SDL_MOUSEWHEEL) {
+		if (evt.wheel.y > 0 && camera_dist_y > camera_min_dist) {
+			camera_dist_y -= 1.0f;
+			camera_dist_z -= 0.2f;
+		}
+		else if (evt.wheel.y < 0 && camera_dist_y < camera_max_dist) {
+			camera_dist_y += 1.0f;
+			camera_dist_z += 0.2f;
+		}
+		player.camera->transform->position = glm::vec3(0.0f, -camera_dist_y, camera_dist_z);
+		return true;
 	}
 
 	return false;
@@ -285,14 +296,16 @@ void PlayMode::update(float elapsed) {
 		}
 
 		//update player's position to respect walking:
-		player.transform->position = walkmesh->to_world_point(player.at);
+		glm::vec3 temp_pos = walkmesh->to_world_point(player.at);
+		glm::quat temp_rot;
+
 		{ //update player's rotation to respect local (smooth) up-vector:
 
 			glm::quat adjust = glm::rotation(
 				player.transform->rotation * glm::vec3(0.0f, 0.0f, 1.0f), //current up vector
 				walkmesh->to_world_smooth_normal(player.at) //smoothed up vector at walk location
 			);
-			player.transform->rotation = glm::normalize(adjust * player.transform->rotation);
+			temp_rot = glm::normalize(adjust * player.transform->rotation);
 		}
 
 		// check for jumping
@@ -316,12 +329,15 @@ void PlayMode::update(float elapsed) {
 				}
 			}
 		}
-		player.transform->position.z = player.transform->position.z + z_relative;
+
+		temp_pos.z = temp_pos.z + z_relative;
 
 		// check if the new position leads to a collision
 		// create player bounding box
-		Collision::AABB player_box = Collision::AABB(player.transform->position, { 0.4f,0.15f,0.6f });
+		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.4f,0.15f,0.6f });
 		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
+
+		bool reset_pos = false;
 
 		if (on_platform) {
 			assert(obstacle_box != nullptr);
@@ -342,11 +358,26 @@ void PlayMode::update(float elapsed) {
 						obstacle_box = &p;
 					}
 					player.at = before;
+					reset_pos = true;
 					break;
 				}
 			}
 		}
+		
+		/*glm::mat4x3 frame = camera->transform->make_local_to_parent();
+		glm::vec3 right = frame[0];
+		glm::vec3 up = frame[1];
+		glm::vec3 forward = -frame[2];
+		
+		camera->transform->position += move.x * right + move.y * forward;*/
+		
 
+		if (!reset_pos) {
+			player.transform->position = temp_pos;
+			player.transform->rotation = temp_rot;
+		}
+		
+		
 		bool in_range = false;
 		// play a message depending on your position
 		for (int i = 0; i < (int)messages.size(); i++)

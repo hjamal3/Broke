@@ -44,6 +44,12 @@ struct PlayMode : Mode {
 	float friction = 10.0f;
 	float slide_velocity = 0.0f;
 
+	// camera control
+	float camera_dist_y = 5.0f;
+	float camera_dist_z = 5.0f;
+	float camera_max_dist = 8.0f;
+	float camera_min_dist = 0.0f;
+
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
 
