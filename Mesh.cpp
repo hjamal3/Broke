@@ -18,6 +18,19 @@ MeshBuffer::MeshBuffer(std::string const &filename) {
 
 	GLuint total = 0;
 
+	// added an extra field to input data.
+	// will just copy over to 'data' with original properties to not mess with rest of code.
+	struct Vertex_mod {
+		glm::vec3 Position;
+		glm::vec3 Normal;
+		glm::u8vec4 Color;
+		glm::vec2 TexCoord;
+		glm::vec3 Position_3D;
+	};
+	static_assert(sizeof(Vertex_mod) == 3 * 4 + 3 * 4 + 4 * 1 + 2 * 4 + 4*3, "Vertex is packed.");
+	std::vector< Vertex_mod > data_mod;
+
+
 	struct Vertex {
 		glm::vec3 Position;
 		glm::vec3 Normal;
@@ -29,7 +42,17 @@ MeshBuffer::MeshBuffer(std::string const &filename) {
 
 	//read + upload data chunk:
 	if (filename.size() >= 5 && filename.substr(filename.size()-5) == ".pnct") {
-		read_chunk(file, "pnct", &data);
+		read_chunk(file, "pnct", &data_mod); // pnct stands for position, normal, color, and textcoord FYI 
+
+		for (int i = 0; i < data_mod.size(); i++)
+		{
+			Vertex v;
+			v.Position = data_mod[i].Position;
+			v.Normal = data_mod[i].Normal;
+			v.Color = data_mod[i].Color;
+			v.TexCoord = data_mod[i].TexCoord;
+			data.push_back(v);
+		}
 
 		//upload data:
 		glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -68,14 +91,22 @@ MeshBuffer::MeshBuffer(std::string const &filename) {
 				throw std::runtime_error("index entry has out-of-range vertex start/count");
 			}
 			std::string name(&strings[0] + entry.name_begin, &strings[0] + entry.name_end);
+
 			Mesh mesh;
 			mesh.type = GL_TRIANGLES;
 			mesh.start = entry.vertex_begin;
 			mesh.count = entry.vertex_end - entry.vertex_begin;
+			//for (uint32_t v = entry.vertex_begin; v < entry.vertex_end; ++v) {
+			//	mesh.min = glm::min(mesh.min, data[v].Position);
+			//	mesh.max = glm::max(mesh.max, data[v].Position);
+			//}
+
+			// now iterate through the 3D vertices for each object. use 3D point this instead!
 			for (uint32_t v = entry.vertex_begin; v < entry.vertex_end; ++v) {
-				mesh.min = glm::min(mesh.min, data[v].Position);
-				mesh.max = glm::max(mesh.max, data[v].Position);
+				mesh.min = glm::min(mesh.min, data_mod[v].Position_3D);
+				mesh.max = glm::max(mesh.max, data_mod[v].Position_3D);
 			}
+
 			bool inserted = meshes.insert(std::make_pair(name, mesh)).second;
 			if (!inserted) {
 				std::cerr << "WARNING: mesh name '" + name + "' in filename '" + filename + "' collides with existing mesh." << std::endl;

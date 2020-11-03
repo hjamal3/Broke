@@ -49,14 +49,28 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	for (auto& transform : scene.transforms) {
 		if (transform.name == "Player") player.transform = &transform;
 
-		// all Cube objects are obstacles
-		std::string str("Cube");
-		if (transform.name.find(str) != std::string::npos)
-		{
-			// create primitive
-			obstacles.emplace_back(Collision::AABB(transform.position, transform.scale));
-		}
+		//// all Cube objects are obstacles
+		//std::string str("Cube");
+		//if (transform.name.find(str) != std::string::npos)
+		//{
+		//	// create primitive
+		//	obstacles.emplace_back(Collision::AABB(transform.position, transform.scale));
+		//}
 
+	}
+
+	// go through the meshes and find Cube objects. Convert to naming convention later
+	std::string str("Cube");
+	const auto& meshes = phonebank_meshes->meshes;
+	for (auto& mesh : meshes) {
+		if (mesh.first.find(str) != std::string::npos && mesh.first.find("Cube.002") == std::string::npos && mesh.first.find("Cube.004") == std::string::npos && mesh.first.find("Cube.001") == std::string::npos)
+		{
+			auto& min = mesh.second.min;
+			auto& max = mesh.second.max;
+			glm::vec3 center = 0.5f * (min + max);
+			glm::vec3 rad = 0.5f * (max - min);
+			obstacles.emplace_back(Collision::AABB(center, rad));
+		}
 	}
 
 	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
@@ -224,6 +238,7 @@ void PlayMode::update(float elapsed) {
 		{
 			if (Collision::testCollision(p, player_box))
 			{
+				//std::cout << "collision" << std::endl;
 				collided = true;
 				// reset barycentric coords
 				player.at = before;
