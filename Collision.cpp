@@ -13,8 +13,8 @@ bool Collision::testAABBAABB(const AABB& a, const AABB& b)
 
 bool Collision::testAABBAABBXY(const AABB& a, const AABB& b)
 {
-	if (std::abs(a.c.x - b.c.x) > a.r.x + b.r.x + 0.5f) { return false; }
-	if (std::abs(a.c.y - b.c.y) > a.r.y + b.r.y + 0.5f) { return false; }
+	if (std::abs(a.c.x - b.c.x) > a.r.x + b.r.x + 0.2f) { return false; }
+	if (std::abs(a.c.y - b.c.y) > a.r.y + b.r.y + 0.2f) { return false; }
 	return true;
 }
 
