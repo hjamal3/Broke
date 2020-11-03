@@ -60,10 +60,10 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	}
 
 	// go through the meshes and find Cube objects. Convert to naming convention later
-	std::string str("Cube");
+	std::string str("o_");
 	const auto& meshes = phonebank_meshes->meshes;
 	for (auto& mesh : meshes) {
-		if (mesh.first.find(str) != std::string::npos && mesh.first.find("Cube.002") == std::string::npos && mesh.first.find("Cube.004") == std::string::npos && mesh.first.find("Cube.001") == std::string::npos)
+		if (mesh.first.find(str))// != std::string::npos && mesh.first.find("Cube.002") == std::string::npos && mesh.first.find("Cube.004") == std::string::npos && mesh.first.find("Cube.001") == std::string::npos)
 		{
 			auto& min = mesh.second.min;
 			auto& max = mesh.second.max;
@@ -84,7 +84,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	player.camera->transform->parent = player.transform;
 
 	//player's eyes are 1.8 units above the ground:
-	player.camera->transform->position = glm::vec3(0.0f, -30.0f, 20.0f);
+	player.camera->transform->position = glm::vec3(0.0f, -5.0f, 5.0f);
 
 	//rotate camera facing direction (-z) to player facing direction (+y):
 	player.camera->transform->rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
