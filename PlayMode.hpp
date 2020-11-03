@@ -18,6 +18,8 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
+	void reset_sliding();
+
 	//----- game state -----
 
 	//input tracking:
@@ -29,6 +31,7 @@ struct PlayMode : Mode {
 	// jumping control
 	bool in_air = false;
 	bool on_platform = false;
+	bool above_platform = false;
 	float gravity = 30.0f;
 	float jump_up_velocity = 0.0f;
 	float z_relative = 0.0f;
@@ -38,7 +41,7 @@ struct PlayMode : Mode {
 	// slide control
 	bool sliding = false;
 	float slide_duration = 1.5f;
-	float slide_acc = 0.2f;
+	float friction = 10.0f;
 	float slide_velocity = 0.0f;
 
 	//local copy of the game scene (so code can change it during gameplay):
