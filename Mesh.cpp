@@ -44,7 +44,7 @@ MeshBuffer::MeshBuffer(std::string const &filename) {
 	if (filename.size() >= 5 && filename.substr(filename.size()-5) == ".pnct") {
 		read_chunk(file, "pnct", &data_mod); // pnct stands for position, normal, color, and textcoord FYI 
 
-		for (int i = 0; i < data_mod.size(); i++)
+		for (int i = 0; i < (int)data_mod.size(); i++)
 		{
 			Vertex v;
 			v.Position = data_mod[i].Position;
