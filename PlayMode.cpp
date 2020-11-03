@@ -185,6 +185,17 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 			return true;
 		}
+	} else if (evt.type == SDL_MOUSEWHEEL) {
+		if (evt.wheel.y > 0 && camera_dist_y > camera_min_dist) {
+			camera_dist_y -= 1.0f;
+			camera_dist_z -= 0.2f;
+		}
+		else if (evt.wheel.y < 0 && camera_dist_y < camera_max_dist) {
+			camera_dist_y += 1.0f;
+			camera_dist_z += 0.2f;
+		}
+		player.camera->transform->position = glm::vec3(0.0f, -camera_dist_y, camera_dist_z);
+		return true;
 	}
 
 	return false;
@@ -196,7 +207,7 @@ void PlayMode::update(float elapsed) {
 		//combine inputs into a move:
 		float PlayerSpeed = 35.0f;
 		glm::vec2 move = glm::vec2(0.0f);
-		
+
 		if (jump.pressed) {
 			if (!in_air) {
 				in_air = true;
@@ -214,17 +225,20 @@ void PlayMode::update(float elapsed) {
 			move.y = 1.0f;
 			if (slide_duration <= 0.0f) {
 				PlayerSpeed = slide_velocity;
-			} else {
+			}
+			else {
 				slide_velocity -= friction * elapsed;
 				slide_duration -= elapsed;
 				PlayerSpeed = slide_velocity;
 			}
-		} else if (sliding && in_air) {
+		}
+		else if (sliding && in_air) {
 			reset_sliding();
-		} else {
-			if (left.pressed && !right.pressed) move.x =-1.0f;
+		}
+		else {
+			if (left.pressed && !right.pressed) move.x = -1.0f;
 			if (!left.pressed && right.pressed) move.x = 1.0f;
-			if (down.pressed && !up.pressed) move.y =-1.0f;
+			if (down.pressed && !up.pressed) move.y = -1.0f;
 			if (!down.pressed && up.pressed) move.y = 1.0f;
 		}
 
@@ -260,13 +274,14 @@ void PlayMode::update(float elapsed) {
 				player.at = end;
 				//rotate step to follow surface:
 				remain = rotation * remain;
-			} else {
+			}
+			else {
 				//ran into a wall, bounce / slide along it:
-				glm::vec3 const &a = walkmesh->vertices[player.at.indices.x];
-				glm::vec3 const &b = walkmesh->vertices[player.at.indices.y];
-				glm::vec3 const &c = walkmesh->vertices[player.at.indices.z];
-				glm::vec3 along = glm::normalize(b-a);
-				glm::vec3 normal = glm::normalize(glm::cross(b-a, c-a));
+				glm::vec3 const& a = walkmesh->vertices[player.at.indices.x];
+				glm::vec3 const& b = walkmesh->vertices[player.at.indices.y];
+				glm::vec3 const& c = walkmesh->vertices[player.at.indices.z];
+				glm::vec3 along = glm::normalize(b - a);
+				glm::vec3 normal = glm::normalize(glm::cross(b - a, c - a));
 				glm::vec3 in = glm::cross(normal, along);
 
 				//check how much 'remain' is pointing out of the triangle:
@@ -274,7 +289,8 @@ void PlayMode::update(float elapsed) {
 				if (d < 0.0f) {
 					//bounce off of the wall:
 					remain += (-1.25f * d) * in;
-				} else {
+				}
+				else {
 					//if it's just pointing along the edge, bend slightly away from wall:
 					remain += 0.01f * d * in;
 				}
@@ -286,14 +302,16 @@ void PlayMode::update(float elapsed) {
 		}
 
 		//update player's position to respect walking:
-		player.transform->position = walkmesh->to_world_point(player.at);
+		glm::vec3 temp_pos = walkmesh->to_world_point(player.at);
+		glm::quat temp_rot;
+
 		{ //update player's rotation to respect local (smooth) up-vector:
 
 			glm::quat adjust = glm::rotation(
 				player.transform->rotation * glm::vec3(0.0f, 0.0f, 1.0f), //current up vector
 				walkmesh->to_world_smooth_normal(player.at) //smoothed up vector at walk location
 			);
-			player.transform->rotation = glm::normalize(adjust * player.transform->rotation);
+			temp_rot = glm::normalize(adjust * player.transform->rotation);
 		}
 
 		// check for jumping
@@ -307,7 +325,8 @@ void PlayMode::update(float elapsed) {
 					jump_up_velocity = 0.0f;
 					in_air = false;
 					on_platform = z_relative > 0.0f;
-				} else if (z_relative <= 0.0f) {
+				}
+				else if (z_relative <= 0.0f) {
 					z_relative = 0.0f;
 					z_relative_threshold = 0.0f;
 					jump_up_velocity = 0.0f;
@@ -316,12 +335,15 @@ void PlayMode::update(float elapsed) {
 				}
 			}
 		}
-		player.transform->position.z = player.transform->position.z + z_relative;
+
+		temp_pos.z = temp_pos.z + z_relative;
 
 		// check if the new position leads to a collision
 		// create player bounding box
-		Collision::AABB player_box = Collision::AABB(player.transform->position, { 0.4f,0.15f,0.6f });
+		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.4f,0.15f,0.6f });
 		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
+
+		bool reset_pos = false;
 
 		if (on_platform) {
 			assert(obstacle_box != nullptr);
@@ -331,8 +353,9 @@ void PlayMode::update(float elapsed) {
 				obstacle_box = nullptr;
 				z_relative_threshold = 0.0f;
 			}
-		} else {
-			for (Collision::AABB & p : obstacles)
+		}
+		else {
+			for (Collision::AABB& p : obstacles)
 			{
 				if (Collision::testCollision(p, player_box))
 				{
@@ -341,19 +364,28 @@ void PlayMode::update(float elapsed) {
 						obstacle_box = &p;
 					}
 					player.at = before;
+					reset_pos = true;
 					break;
 				}
 			}
 		}
+		
 
-		/*
-		glm::mat4x3 frame = camera->transform->make_local_to_parent();
+		
+		/*glm::mat4x3 frame = camera->transform->make_local_to_parent();
 		glm::vec3 right = frame[0];
-		//glm::vec3 up = frame[1];
+		glm::vec3 up = frame[1];
 		glm::vec3 forward = -frame[2];
+		
+		camera->transform->position += move.x * right + move.y * forward;*/
+		
 
-		camera->transform->position += move.x * right + move.y * forward;
-		*/
+		if (!reset_pos) {
+			player.transform->position = temp_pos;
+			player.transform->rotation = temp_rot;
+		}
+		
+		
 	}
 
 	//reset button press counters:
