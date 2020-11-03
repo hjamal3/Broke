@@ -68,8 +68,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
 
 	// create some message objects. hardcoded for now
-	message_coords.emplace_back(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z)); // starting coord of player
-	messages.emplace_back("At start position!");
+	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "At start position!")); // starting coord of player
 
 	//create a player camera attached to a child of the player transform:
 	scene.transforms.emplace_back();
@@ -350,17 +349,16 @@ void PlayMode::update(float elapsed) {
 
 		bool in_range = false;
 		// play a message depending on your position
-		for (int i = 0; i < message_coords.size(); i++)
+		for (int i = 0; i < (int)messages.size(); i++)
 		{
 			// check if in range of something
-			glm::vec3 diff = player.transform->position - message_coords[i];
-			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 0.5f))
+			glm::vec3 diff = player.transform->position - messages[i].first;
+			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f))
 			{
 				in_range = true;
 				// if not already there
 				if (i != idx_message)
 				{
-					std::cout << messages[i] << std::endl; // REPLACE THIS WITH TEXT DRAWING
 					idx_message = i;
 				}
 			}
@@ -409,13 +407,21 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			0.0f, 0.0f, 0.0f, 1.0f
 		));
 
+
+		std::string draw_str = "Mouse motion looks; WASD moves; escape ungrabs mouse. "; // MODIFY THIS FOR ANY DEFAULT STRING
+		// print message string
+		if (idx_message != -1)
+		{
+			draw_str += messages[idx_message].second;
+		}
+
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion looks; WASD moves; escape ungrabs mouse",
+		lines.draw_text(draw_str,
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion looks; WASD moves; escape ungrabs mouse",
+		lines.draw_text(draw_str,
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));

@@ -63,8 +63,7 @@ struct PlayMode : Mode {
 	std::vector<Collision::AABB> obstacles;
 
 	// coordinates of messages. 
-	std::vector <glm::vec3> message_coords;
-	std::vector <std::string> messages;
+	std::vector<std::pair< glm::vec3, std::string>> messages;
 	int idx_message = -1; // keep an index of your location, so that you don't keep playing the same message over and over
 
 };
