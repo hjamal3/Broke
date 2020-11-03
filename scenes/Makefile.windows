@@ -8,11 +8,11 @@ all : \
     $(DIST)/phone-bank.w \
 
 
-$(DIST)/phone-bank.scene : game.blend export-scene.py
-    $(BLENDER) --background --python export-scene.py -- "game.blend:Platforms" "$(DIST)/phone-bank.scene"
+$(DIST)/phone-bank.scene : level1.blend export-scene.py
+    $(BLENDER) --background --python export-scene.py -- "level1.blend:Platforms" "$(DIST)/phone-bank.scene"
 
-$(DIST)/phone-bank.pnct : game.blend export-meshes.py
-    $(BLENDER) --background --python export-meshes.py -- "game.blend:Platforms" "$(DIST)/phone-bank.pnct" 
+$(DIST)/phone-bank.pnct : level1.blend export-meshes.py
+    $(BLENDER) --background --python export-meshes.py -- "level1.blend:Platforms" "$(DIST)/phone-bank.pnct" 
 
-$(DIST)/phone-bank.w : game.blend export-walkmeshes.py
-    $(BLENDER) --background --python export-walkmeshes.py -- "game.blend:WalkMeshes" "$(DIST)/phone-bank.w" 
+$(DIST)/phone-bank.w : level1.blend export-walkmeshes.py
+    $(BLENDER) --background --python export-walkmeshes.py -- "level1.blend:WalkMeshes" "$(DIST)/phone-bank.w" 
