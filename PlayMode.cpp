@@ -197,11 +197,12 @@ void PlayMode::update(float elapsed) {
 		if (sliding && !in_air) {
 			// when sliding, bypass WASD command and only charge in the direction the player faces
 			move.y = 1.0f;
-			slide_velocity -= friction * elapsed;
-			slide_duration -= elapsed;
-			PlayerSpeed = slide_velocity;
 			if (slide_duration <= 0.0f) {
-				reset_sliding();
+				PlayerSpeed = slide_velocity;
+			} else {
+				slide_velocity -= friction * elapsed;
+				slide_duration -= elapsed;
+				PlayerSpeed = slide_velocity;
 			}
 		} else if (sliding && in_air) {
 			reset_sliding();
