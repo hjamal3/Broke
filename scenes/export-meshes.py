@@ -94,6 +94,24 @@ data = []
 #strings contains the mesh names:
 strings = b''
 
+# store 3D coords of mesh points!
+coords = []
+# for obj in bpy.data.objects:
+	# if obj.type == 'MESH':
+		# print(obj.name)
+		# print(obj.location)
+		# #print(obj.matrix_world @obj.bound_box)
+		
+		# # checkout transform
+		# print('LEN 1: ' + str(len(obj.data.polygons)))
+		# for pol in obj.data.polygons:
+			# for i in range(0,3):
+				# loop = obj.data.loops[pol.loop_indices[i]]
+				# vertex = obj.data.vertices[loop.vertex_index]
+				# #print(obj.matrix_world @ vertex.co)
+				# vec = obj.matrix_world @ vertex.co
+			
+
 #index gives offsets into the data (and names) for each mesh:
 index = b''
 
@@ -123,6 +141,7 @@ for obj in bpy.data.objects:
 
 	#apply all modifiers (?):
 	bpy.ops.object.convert(target='MESH')
+	
 
 	#subdivide object's mesh into triangles:
 	bpy.ops.object.mode_set(mode='EDIT')
@@ -139,9 +158,20 @@ for obj in bpy.data.objects:
 	name_end = len(strings)
 	index += struct.pack('I', name_begin)
 	index += struct.pack('I', name_end)
-
 	index += struct.pack('I', vertex_count) #vertex_begin
 	#...count will be written below
+	
+	for pol in obj.data.polygons:
+		for i in range(0,3):
+			loop = obj.data.loops[pol.loop_indices[i]]
+			vertex = obj.data.vertices[loop.vertex_index]
+			vec = obj.matrix_world @ vertex.co
+			coords += [vec[0], vec[1], vec[2]]
+			
+	for pol in mesh.polygons:
+		for i in range(0,3):
+			loop = mesh.loops[pol.loop_indices[i]]
+			vertex = mesh.vertices[loop.vertex_index]
 
 	colors = None
 	if len(obj.data.vertex_colors) == 0:
@@ -162,12 +192,14 @@ for obj in bpy.data.objects:
 	local_data = b''
 
 	#write the mesh triangles:
+	idx = 0
 	for poly in mesh.polygons:
 		assert(len(poly.loop_indices) == 3)
 		for i in range(0,3):
 			assert(mesh.loops[poly.loop_indices[i]].vertex_index == poly.vertices[i])
 			loop = mesh.loops[poly.loop_indices[i]]
 			vertex = mesh.vertices[loop.vertex_index]
+
 			for x in vertex.co:
 				local_data += struct.pack('f', x)
 			for x in loop.normal:
@@ -182,6 +214,11 @@ for obj in bpy.data.objects:
 				local_data += struct.pack('ff', uv.x, uv.y)
 			else:
 				local_data += struct.pack('ff', 0, 0)
+			# add 3D coords
+			vec_3d = obj.matrix_world @ vertex.co
+			for x in vec_3d:
+				local_data += struct.pack('f', x)
+
 		if len(local_data) > 1000:
 			data.append(local_data)
 			local_data = b''
@@ -194,7 +231,7 @@ for obj in bpy.data.objects:
 data = b''.join(data)
 
 #check that code created as much data as anticipated:
-assert(vertex_count * (4*3+4*3+1*4+4*2) == len(data))
+assert(vertex_count * (4*3+4*3+1*4+4*2+4*3) == len(data))
 
 #write the data chunk and index chunk to an output blob:
 blob = open(outfile, 'wb')
