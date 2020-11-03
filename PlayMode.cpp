@@ -48,15 +48,6 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//create a player transform:
 	for (auto& transform : scene.transforms) {
 		if (transform.name == "Player") player.transform = &transform;
-
-		//// all Cube objects are obstacles
-		//std::string str("Cube");
-		//if (transform.name.find(str) != std::string::npos)
-		//{
-		//	// create primitive
-		//	obstacles.emplace_back(Collision::AABB(transform.position, transform.scale));
-		//}
-
 	}
 
 	// go through the meshes and find Cube objects. Convert to naming convention later
@@ -75,6 +66,10 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	}
 
 	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
+
+	// create some message objects. hardcoded for now
+	message_coords.emplace_back(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z)); // starting coord of player
+	messages.emplace_back("At start position!");
 
 	//create a player camera attached to a child of the player transform:
 	scene.transforms.emplace_back();
@@ -196,7 +191,7 @@ void PlayMode::update(float elapsed) {
 		//combine inputs into a move:
 		float PlayerSpeed = 35.0f;
 		glm::vec2 move = glm::vec2(0.0f);
-		
+
 		if (jump.pressed) {
 			if (!in_air) {
 				in_air = true;
@@ -214,17 +209,20 @@ void PlayMode::update(float elapsed) {
 			move.y = 1.0f;
 			if (slide_duration <= 0.0f) {
 				PlayerSpeed = slide_velocity;
-			} else {
+			}
+			else {
 				slide_velocity -= friction * elapsed;
 				slide_duration -= elapsed;
 				PlayerSpeed = slide_velocity;
 			}
-		} else if (sliding && in_air) {
+		}
+		else if (sliding && in_air) {
 			reset_sliding();
-		} else {
-			if (left.pressed && !right.pressed) move.x =-1.0f;
+		}
+		else {
+			if (left.pressed && !right.pressed) move.x = -1.0f;
 			if (!left.pressed && right.pressed) move.x = 1.0f;
-			if (down.pressed && !up.pressed) move.y =-1.0f;
+			if (down.pressed && !up.pressed) move.y = -1.0f;
 			if (!down.pressed && up.pressed) move.y = 1.0f;
 		}
 
@@ -260,13 +258,14 @@ void PlayMode::update(float elapsed) {
 				player.at = end;
 				//rotate step to follow surface:
 				remain = rotation * remain;
-			} else {
+			}
+			else {
 				//ran into a wall, bounce / slide along it:
-				glm::vec3 const &a = walkmesh->vertices[player.at.indices.x];
-				glm::vec3 const &b = walkmesh->vertices[player.at.indices.y];
-				glm::vec3 const &c = walkmesh->vertices[player.at.indices.z];
-				glm::vec3 along = glm::normalize(b-a);
-				glm::vec3 normal = glm::normalize(glm::cross(b-a, c-a));
+				glm::vec3 const& a = walkmesh->vertices[player.at.indices.x];
+				glm::vec3 const& b = walkmesh->vertices[player.at.indices.y];
+				glm::vec3 const& c = walkmesh->vertices[player.at.indices.z];
+				glm::vec3 along = glm::normalize(b - a);
+				glm::vec3 normal = glm::normalize(glm::cross(b - a, c - a));
 				glm::vec3 in = glm::cross(normal, along);
 
 				//check how much 'remain' is pointing out of the triangle:
@@ -274,7 +273,8 @@ void PlayMode::update(float elapsed) {
 				if (d < 0.0f) {
 					//bounce off of the wall:
 					remain += (-1.25f * d) * in;
-				} else {
+				}
+				else {
 					//if it's just pointing along the edge, bend slightly away from wall:
 					remain += 0.01f * d * in;
 				}
@@ -307,7 +307,8 @@ void PlayMode::update(float elapsed) {
 					jump_up_velocity = 0.0f;
 					in_air = false;
 					on_platform = z_relative > 0.0f;
-				} else if (z_relative <= 0.0f) {
+				}
+				else if (z_relative <= 0.0f) {
 					z_relative = 0.0f;
 					z_relative_threshold = 0.0f;
 					jump_up_velocity = 0.0f;
@@ -331,8 +332,9 @@ void PlayMode::update(float elapsed) {
 				obstacle_box = nullptr;
 				z_relative_threshold = 0.0f;
 			}
-		} else {
-			for (Collision::AABB & p : obstacles)
+		}
+		else {
+			for (Collision::AABB& p : obstacles)
 			{
 				if (Collision::testCollision(p, player_box))
 				{
@@ -346,14 +348,27 @@ void PlayMode::update(float elapsed) {
 			}
 		}
 
-		/*
-		glm::mat4x3 frame = camera->transform->make_local_to_parent();
-		glm::vec3 right = frame[0];
-		//glm::vec3 up = frame[1];
-		glm::vec3 forward = -frame[2];
-
-		camera->transform->position += move.x * right + move.y * forward;
-		*/
+		bool in_range = false;
+		// play a message depending on your position
+		for (int i = 0; i < message_coords.size(); i++)
+		{
+			// check if in range of something
+			glm::vec3 diff = player.transform->position - message_coords[i];
+			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 0.5f))
+			{
+				in_range = true;
+				// if not already there
+				if (i != idx_message)
+				{
+					std::cout << messages[i] << std::endl; // REPLACE THIS WITH TEXT DRAWING
+					idx_message = i;
+				}
+			}
+		}
+		if (!in_range)
+		{
+			idx_message = -1;
+		}
 	}
 
 	//reset button press counters:
