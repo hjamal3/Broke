@@ -119,6 +119,15 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.downs += 1;
 			down.pressed = true;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_SPACE) {
+			if (!jump.pressed) {
+				jump.pressed = true;
+				return true;
+			}
+		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
+			slide.pressed = true;
+			z_relative = -0.5f;
+			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
@@ -132,6 +141,15 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s) {
 			down.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_SPACE) {
+			jump.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
+			slide.pressed = false;
+			if (z_relative < 0.0f) {
+				z_relative = 0.0f;
+			}
 			return true;
 		}
 	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
@@ -166,12 +184,32 @@ void PlayMode::update(float elapsed) {
 	//player walking:
 	{
 		//combine inputs into a move:
-		constexpr float PlayerSpeed = 30.0f;
+		float PlayerSpeed = 35.0f;
 		glm::vec2 move = glm::vec2(0.0f);
-		if (left.pressed && !right.pressed) move.x =-1.0f;
-		if (!left.pressed && right.pressed) move.x = 1.0f;
-		if (down.pressed && !up.pressed) move.y =-1.0f;
-		if (!down.pressed && up.pressed) move.y = 1.0f;
+		
+		if (slide.pressed && !in_air) {
+			// when sliding, bypass WASD command and only charge in the direction the player faces
+			move.y = 1.0f;
+			PlayerSpeed *= 0.8f;
+			slide_duration -= elapsed;
+			if (slide_duration <= 0.0f) {
+				slide.pressed = false;
+				if (z_relative < 0.0f) z_relative = 0.0f;
+				slide_duration = 1.5f;
+			}
+		} else {
+			if (left.pressed && !right.pressed) move.x =-1.0f;
+			if (!left.pressed && right.pressed) move.x = 1.0f;
+			if (down.pressed && !up.pressed) move.y =-1.0f;
+			if (!down.pressed && up.pressed) move.y = 1.0f;
+		}
+
+		if (jump.pressed) {
+			if (!in_air) {
+				in_air = true;
+				jump_up_velocity = 15.0f;
+			}
+		}
 
 		//make it so that moving diagonally doesn't go faster:
 		if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
@@ -229,39 +267,65 @@ void PlayMode::update(float elapsed) {
 			std::cout << "NOTE: code used full iteration budget for walking." << std::endl;
 		}
 
+		//update player's position to respect walking:
+		player.transform->position = walkmesh->to_world_point(player.at);
+		{ //update player's rotation to respect local (smooth) up-vector:
+
+			glm::quat adjust = glm::rotation(
+				player.transform->rotation * glm::vec3(0.0f, 0.0f, 1.0f), //current up vector
+				walkmesh->to_world_smooth_normal(player.at) //smoothed up vector at walk location
+			);
+			player.transform->rotation = glm::normalize(adjust * player.transform->rotation);
+		}
+
+		// check for jumping
+		if (in_air) {
+			jump_up_velocity -= gravity * elapsed;
+			z_relative += jump_up_velocity * elapsed;
+			if (z_relative <= z_relative_threshold) {
+				z_relative = z_relative_threshold;
+				jump_up_velocity = 0.0f;
+				in_air = false;
+				on_platform = z_relative > 0.0f;
+
+			}
+			player.transform->position.z = player.transform->position.z + z_relative;
+		} else {
+			player.transform->position.z = player.transform->position.z + z_relative;
+		}
+
 		// check if the new position leads to a collision
 		// create player bounding box
-		bool collided = false;
 		Collision::AABB player_box = Collision::AABB(walkmesh->to_world_point(player.at), { 0.4f,0.15f,0.6f });
 		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
-		for (Collision::AABB & p : obstacles)
-		{
-			if (Collision::testCollision(p, player_box))
+
+		if (on_platform) {
+			assert(obstacle_box != nullptr);
+			if (!Collision::testCollisionXY(*obstacle_box, player_box)) {
+				in_air = true;
+				on_platform = false;
+				obstacle_box = nullptr;
+				z_relative_threshold = 0.0f;
+			}
+		} else {
+			// bool collided = false;
+			for (Collision::AABB & p : obstacles)
 			{
-				//std::cout << "collision" << std::endl;
-				collided = true;
-				// reset barycentric coords
-				player.at = before;
-				break;
+				if (Collision::testCollision(p, player_box))
+				{
+					// collided = true;
+					if (in_air) {
+						// player.transform->position.z = player.transform->position.z - z_relative + p.r.z * 2.0f;
+						z_relative_threshold = 2.0f * p.r.z;
+						obstacle_box = &p;
+					} else {
+						// reset barycentric coords
+						player.at = before;
+					}
+					break;
+				}
 			}
 		}
-
-		if (!collided)
-		{
-			//update player's position to respect walking:
-			player.transform->position = walkmesh->to_world_point(player.at);
-
-			{ //update player's rotation to respect local (smooth) up-vector:
-
-				glm::quat adjust = glm::rotation(
-					player.transform->rotation * glm::vec3(0.0f, 0.0f, 1.0f), //current up vector
-					walkmesh->to_world_smooth_normal(player.at) //smoothed up vector at walk location
-				);
-				player.transform->rotation = glm::normalize(adjust * player.transform->rotation);
-			}
-		}
-
-
 		/*
 		glm::mat4x3 frame = camera->transform->make_local_to_parent();
 		glm::vec3 right = frame[0];
