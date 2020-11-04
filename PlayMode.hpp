@@ -37,6 +37,8 @@ struct PlayMode : Mode {
 	bool above_platform = false;
 	float gravity = 30.0f;
 	float jump_up_velocity = 0.0f;
+	float max_fall_speed = -12.0f;
+	float jump_speed = 13.0f;
 	float z_relative = 0.0f;
 	float z_relative_threshold = 0.0f;
 	Collision::AABB *obstacle_box = nullptr;
@@ -45,7 +47,7 @@ struct PlayMode : Mode {
 	bool sliding = false;
 	float slide_duration = 1.2f;
 	float slide_duration_reset = 1.2f;
-	float friction = 15.0f;
+	float friction = 17.0f;
 	float slide_velocity = 0.0f;
 
 

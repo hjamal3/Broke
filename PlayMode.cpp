@@ -68,7 +68,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
 
 	// create some message objects. hardcoded for now
-	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "At start position!")); // starting coord of player
+	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
 
 	//create a player camera attached to a child of the player transform:
 	scene.transforms.emplace_back();
@@ -213,7 +213,7 @@ void PlayMode::update(float elapsed) {
 			prev_jump = true;
 			if (!in_air) {
 				in_air = true;
-				jump_up_velocity = 10.0f;
+				jump_up_velocity = jump_speed;
 			}
 		}
 
@@ -319,11 +319,21 @@ void PlayMode::update(float elapsed) {
 
 		// check for jumping
 		if (in_air && !holding) {
-			std::cout << "branch A\n";
-			jump_up_velocity -= gravity * elapsed;
+			if (jump_up_velocity - gravity * elapsed < max_fall_speed) {
+				jump_up_velocity = max_fall_speed;
+			}
+			else {
+				jump_up_velocity -= gravity * elapsed;
+			}
 			z_relative += jump_up_velocity * elapsed;
+			if (z_relative <= 0.0f) {
+				z_relative = 0.0f;
+				jump_up_velocity = 0.0f;
+				in_air = false;
+				on_platform = false;
+			}
 			// checking for landing
-			bool landed = false;
+			/*bool landed = false;
 			if (z_relative <= z_relative_threshold) {
 				float peak = z_relative + 0.5f * jump_up_velocity * jump_up_velocity / gravity;
 				if (peak > z_relative_threshold && jump_up_velocity < 0.0f) {
@@ -340,19 +350,19 @@ void PlayMode::update(float elapsed) {
 					on_platform = false;
 					landed = true;
 				}
-			}
-			if (!landed && jump.pressed && prev_jump) {
-				if (z_relative_threshold != 0.0f /* i.e. not on ground*/) {
-					std::cout << z_relative_threshold - z_relative << "\n";
+			}*/
+			/*if (!landed && jump.pressed && prev_jump) {
+				if (z_relative_threshold != 0.0f) { // not on ground
+					//std::cout << z_relative_threshold - z_relative << "\n";
 					if (z_relative_threshold - z_relative > 0.0f && z_relative_threshold - z_relative < 1.0f) {
 						holding = true;
 						jump_up_velocity = 0.0f;
 					}
 				}
-			}
-		} else if (in_air && holding) {
-			std::cout << "branch C\n";
+			}*/
+		} /*else if (in_air && holding) {
 			hold_timer -= elapsed;
+			//std::printf("Holding in air %f\n", z_relative);
 			if (hold_timer < 0.0f) {
 				z_relative = z_relative_threshold;
 				hold_timer = 1.0f;
@@ -360,18 +370,18 @@ void PlayMode::update(float elapsed) {
 				on_platform = true;
 				in_air = false;
 			}
-		}
+		}*/
 
 		temp_pos.z = temp_pos.z + z_relative;
 
 		// check if the new position leads to a collision
 		// create player bounding box
-		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.4f,0.15f,0.6f });
+		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.45f,0.4f,0.75f });
 		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
 
 		bool reset_pos = false;
 
-		if (on_platform) {
+		/*if (on_platform) {
 			assert(obstacle_box != nullptr);
 			if (!Collision::testCollisionXY(*obstacle_box, player_box)) {
 				in_air = true;
@@ -379,20 +389,28 @@ void PlayMode::update(float elapsed) {
 				obstacle_box = nullptr;
 				z_relative_threshold = 0.0f;
 			}
-		}
-		else {
-			for (Collision::AABB& p : obstacles)
+		}*/
+		for (Collision::AABB& p : obstacles)
+		{
+			if (Collision::testCollision(p, player_box) && obstacle_box != &p)
 			{
-				if (Collision::testCollision(p, player_box))
-				{
-					if (in_air) {
-						z_relative_threshold = p.c.z + p.r.z;
+				float obstacle_height = p.c.z + p.r.z;
+				if (in_air) {
+					if (jump_up_velocity < 0 && std::abs(z_relative - obstacle_height) < 0.4f) {
+						z_relative = obstacle_height;
+						jump_up_velocity = 0.0f;
+						in_air = false;
+						on_platform = true;
 						obstacle_box = &p;
 					}
-					player.at = before;
-					reset_pos = true;
-					break;
 				}
+				player.at = before;
+				reset_pos = true;
+			}
+			if (on_platform && obstacle_box == &p && !Collision::testCollision(p, player_box)) {
+				in_air = true;
+				on_platform = false;
+				obstacle_box = nullptr;
 			}
 		}
 		
@@ -474,7 +492,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 
-		std::string draw_str = "Mouse motion looks; WASD moves; escape ungrabs mouse. "; // MODIFY THIS FOR ANY DEFAULT STRING
+		std::string draw_str = "";// "Mouse motion looks; WASD moves; escape ungrabs mouse. "; // MODIFY THIS FOR ANY DEFAULT STRING
 		// print message string
 		if (idx_message != -1)
 		{
