@@ -384,6 +384,9 @@ void PlayMode::update(float elapsed) {
 			player.transform->position = temp_pos;
 			player.transform->rotation = temp_rot;
 		}
+		else {
+			player.transform->position.z = temp_pos.z;
+		}
 		
 		
 	}
