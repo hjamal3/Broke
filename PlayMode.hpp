@@ -40,8 +40,9 @@ struct PlayMode : Mode {
 
 	// slide control
 	bool sliding = false;
-	float slide_duration = 1.5f;
-	float friction = 10.0f;
+	float slide_duration = 1.2f;
+	float slide_duration_reset = 1.2f;
+	float friction = 15.0f;
 	float slide_velocity = 0.0f;
 
 	// camera control
@@ -64,6 +65,7 @@ struct PlayMode : Mode {
 		// Player contains a bounding box
 
 	} player;
+	float player_height_default;
 
 	// primitives info
 	std::vector<Collision::AABB> obstacles;
