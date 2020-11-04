@@ -106,6 +106,10 @@ void PlayMode::reset_sliding() {
 	if (z_relative < 0.0f) z_relative = 0.0f;
 }
 
+void PlayMode::reset_climbing() {
+	hold_timer = 1.0f;
+}
+
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
 
 	if (evt.type == SDL_KEYDOWN) {
@@ -155,6 +159,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_SPACE) {
 			jump.pressed = false;
+			prev_jump = false;
+			holding = false;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
 			if (slide.pressed) {
@@ -197,10 +203,11 @@ void PlayMode::update(float elapsed) {
 		float PlayerSpeed = 35.0f;
 		glm::vec2 move = glm::vec2(0.0f);
 		
-		if (jump.pressed) {
+		if (jump.pressed && !prev_jump) {
+			prev_jump = true;
 			if (!in_air) {
 				in_air = true;
-				jump_up_velocity = 15.0f;
+				jump_up_velocity = 10.0f;
 			}
 		}
 
@@ -297,23 +304,47 @@ void PlayMode::update(float elapsed) {
 		}
 
 		// check for jumping
-		if (in_air) {
+		if (in_air && !holding) {
+			std::cout << "branch A\n";
 			jump_up_velocity -= gravity * elapsed;
 			z_relative += jump_up_velocity * elapsed;
-			if (z_relative <= z_relative_threshold && jump_up_velocity < 0.0f) {
+			// checking for landing
+			bool landed = false;
+			if (z_relative <= z_relative_threshold) {
 				float peak = z_relative + 0.5f * jump_up_velocity * jump_up_velocity / gravity;
-				if (peak > z_relative_threshold) {
+				if (peak > z_relative_threshold && jump_up_velocity < 0.0f) {
 					z_relative = z_relative_threshold;
 					jump_up_velocity = 0.0f;
 					in_air = false;
 					on_platform = z_relative > 0.0f;
+					landed = true;
 				} else if (z_relative <= 0.0f) {
 					z_relative = 0.0f;
 					z_relative_threshold = 0.0f;
 					jump_up_velocity = 0.0f;
 					in_air = false;
 					on_platform = false;
+					landed = true;
 				}
+			}
+			if (!landed && jump.pressed && prev_jump) {
+				if (z_relative_threshold != 0.0f /* i.e. not on ground*/) {
+					std::cout << z_relative_threshold - z_relative << "\n";
+					if (z_relative_threshold - z_relative > 0.0f && z_relative_threshold - z_relative < 1.0f) {
+						holding = true;
+						jump_up_velocity = 0.0f;
+					}
+				}
+			}
+		} else if (in_air && holding) {
+			std::cout << "branch C\n";
+			hold_timer -= elapsed;
+			if (hold_timer < 0.0f) {
+				z_relative = z_relative_threshold;
+				hold_timer = 1.0f;
+				holding = false;
+				on_platform = true;
+				in_air = false;
 			}
 		}
 		player.transform->position.z = player.transform->position.z + z_relative;
