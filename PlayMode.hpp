@@ -19,6 +19,7 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	void reset_sliding();
+	void reset_climbing();
 
 	//----- game state -----
 
@@ -27,6 +28,8 @@ struct PlayMode : Mode {
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
 	} left, right, down, up, jump, slide;
+
+	uint8_t operation = 0;
 
 	// jumping control
 	bool in_air = false;
@@ -45,11 +48,18 @@ struct PlayMode : Mode {
 	float friction = 15.0f;
 	float slide_velocity = 0.0f;
 
+
+	// climbing control
+	bool prev_jump = false;
+	bool holding = true;
+	float hold_timer = 1.0f;
+
 	// camera control
 	float camera_dist_y = 5.0f;
 	float camera_dist_z = 5.0f;
 	float camera_max_dist = 8.0f;
 	float camera_min_dist = 0.0f;
+
 
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
