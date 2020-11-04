@@ -87,6 +87,8 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//start player walking at nearest walk point:
 	player.at = walkmesh->nearest_walk_point(player.transform->position);
 
+	player_height_default = player.transform->scale.z;
+
 }
 
 PlayMode::~PlayMode() {
@@ -95,9 +97,9 @@ PlayMode::~PlayMode() {
 void PlayMode::reset_sliding() {
 	slide.pressed = false;
 	sliding = false;
-	slide_duration = 1.5f;
+	slide_duration = slide_duration_reset;
 	slide_velocity = 0.0f;
-	if (z_relative < 0.0f) z_relative = 0.0f;
+	player.transform->scale.z = player_height_default;
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
@@ -130,7 +132,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
 			if (!slide.pressed) {
 				slide.pressed = true;
-				z_relative = -0.5f;
 			}
 			return true;
 		}
@@ -212,6 +213,7 @@ void PlayMode::update(float elapsed) {
 		if (slide.pressed && !sliding) {
 			sliding = true;
 			slide_velocity = PlayerSpeed * 0.8f;
+			player.transform->scale.z = 0.6f * player_height_default;
 		}
 
 		if (sliding && !in_air) {
