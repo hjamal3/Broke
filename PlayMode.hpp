@@ -43,14 +43,23 @@ struct PlayMode : Mode {
 
 	// slide control
 	bool sliding = false;
-	float slide_duration = 1.5f;
-	float friction = 10.0f;
+	float slide_duration = 1.2f;
+	float slide_duration_reset = 1.2f;
+	float friction = 15.0f;
 	float slide_velocity = 0.0f;
+
 
 	// climbing control
 	bool prev_jump = false;
 	bool holding = true;
 	float hold_timer = 1.0f;
+
+	// camera control
+	float camera_dist_y = 5.0f;
+	float camera_dist_z = 5.0f;
+	float camera_max_dist = 8.0f;
+	float camera_min_dist = 0.0f;
+
 
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
@@ -66,8 +75,13 @@ struct PlayMode : Mode {
 		// Player contains a bounding box
 
 	} player;
+	float player_height_default;
 
 	// primitives info
 	std::vector<Collision::AABB> obstacles;
+
+	// coordinates of messages. 
+	std::vector<std::pair< glm::vec3, std::string>> messages;
+	int idx_message = -1; // keep an index of your location, so that you don't keep playing the same message over and over
 
 };

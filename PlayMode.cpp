@@ -48,15 +48,6 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//create a player transform:
 	for (auto& transform : scene.transforms) {
 		if (transform.name == "Player") player.transform = &transform;
-
-		//// all Cube objects are obstacles
-		//std::string str("Cube");
-		//if (transform.name.find(str) != std::string::npos)
-		//{
-		//	// create primitive
-		//	obstacles.emplace_back(Collision::AABB(transform.position, transform.scale));
-		//}
-
 	}
 
 	// go through the meshes and find Cube objects. Convert to naming convention later
@@ -76,6 +67,9 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 
 	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
 
+	// create some message objects. hardcoded for now
+	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "At start position!")); // starting coord of player
+
 	//create a player camera attached to a child of the player transform:
 	scene.transforms.emplace_back();
 	scene.cameras.emplace_back(&scene.transforms.back());
@@ -93,6 +87,8 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//start player walking at nearest walk point:
 	player.at = walkmesh->nearest_walk_point(player.transform->position);
 
+	player_height_default = player.transform->scale.z;
+
 }
 
 PlayMode::~PlayMode() {
@@ -101,9 +97,9 @@ PlayMode::~PlayMode() {
 void PlayMode::reset_sliding() {
 	slide.pressed = false;
 	sliding = false;
-	slide_duration = 1.5f;
+	slide_duration = slide_duration_reset;
 	slide_velocity = 0.0f;
-	if (z_relative < 0.0f) z_relative = 0.0f;
+	player.transform->scale.z = player_height_default;
 }
 
 void PlayMode::reset_climbing() {
@@ -140,7 +136,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
 			if (!slide.pressed) {
 				slide.pressed = true;
-				z_relative = -0.5f;
 			}
 			return true;
 		}
@@ -191,6 +186,17 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 			return true;
 		}
+	} else if (evt.type == SDL_MOUSEWHEEL) {
+		if (evt.wheel.y > 0 && camera_dist_y > camera_min_dist) {
+			camera_dist_y -= 1.0f;
+			camera_dist_z -= 0.2f;
+		}
+		else if (evt.wheel.y < 0 && camera_dist_y < camera_max_dist) {
+			camera_dist_y += 1.0f;
+			camera_dist_z += 0.2f;
+		}
+		player.camera->transform->position = glm::vec3(0.0f, -camera_dist_y, camera_dist_z);
+		return true;
 	}
 
 	return false;
@@ -214,6 +220,7 @@ void PlayMode::update(float elapsed) {
 		if (slide.pressed && !sliding) {
 			sliding = true;
 			slide_velocity = PlayerSpeed * 0.8f;
+			player.transform->scale.z = 0.6f * player_height_default;
 		}
 
 		if (sliding && !in_air) {
@@ -221,17 +228,20 @@ void PlayMode::update(float elapsed) {
 			move.y = 1.0f;
 			if (slide_duration <= 0.0f) {
 				PlayerSpeed = slide_velocity;
-			} else {
+			}
+			else {
 				slide_velocity -= friction * elapsed;
 				slide_duration -= elapsed;
 				PlayerSpeed = slide_velocity;
 			}
-		} else if (sliding && in_air) {
+		}
+		else if (sliding && in_air) {
 			reset_sliding();
-		} else {
-			if (left.pressed && !right.pressed) move.x =-1.0f;
+		}
+		else {
+			if (left.pressed && !right.pressed) move.x = -1.0f;
 			if (!left.pressed && right.pressed) move.x = 1.0f;
-			if (down.pressed && !up.pressed) move.y =-1.0f;
+			if (down.pressed && !up.pressed) move.y = -1.0f;
 			if (!down.pressed && up.pressed) move.y = 1.0f;
 		}
 
@@ -267,13 +277,14 @@ void PlayMode::update(float elapsed) {
 				player.at = end;
 				//rotate step to follow surface:
 				remain = rotation * remain;
-			} else {
+			}
+			else {
 				//ran into a wall, bounce / slide along it:
-				glm::vec3 const &a = walkmesh->vertices[player.at.indices.x];
-				glm::vec3 const &b = walkmesh->vertices[player.at.indices.y];
-				glm::vec3 const &c = walkmesh->vertices[player.at.indices.z];
-				glm::vec3 along = glm::normalize(b-a);
-				glm::vec3 normal = glm::normalize(glm::cross(b-a, c-a));
+				glm::vec3 const& a = walkmesh->vertices[player.at.indices.x];
+				glm::vec3 const& b = walkmesh->vertices[player.at.indices.y];
+				glm::vec3 const& c = walkmesh->vertices[player.at.indices.z];
+				glm::vec3 along = glm::normalize(b - a);
+				glm::vec3 normal = glm::normalize(glm::cross(b - a, c - a));
 				glm::vec3 in = glm::cross(normal, along);
 
 				//check how much 'remain' is pointing out of the triangle:
@@ -281,7 +292,8 @@ void PlayMode::update(float elapsed) {
 				if (d < 0.0f) {
 					//bounce off of the wall:
 					remain += (-1.25f * d) * in;
-				} else {
+				}
+				else {
 					//if it's just pointing along the edge, bend slightly away from wall:
 					remain += 0.01f * d * in;
 				}
@@ -293,14 +305,16 @@ void PlayMode::update(float elapsed) {
 		}
 
 		//update player's position to respect walking:
-		player.transform->position = walkmesh->to_world_point(player.at);
+		glm::vec3 temp_pos = walkmesh->to_world_point(player.at);
+		glm::quat temp_rot;
+
 		{ //update player's rotation to respect local (smooth) up-vector:
 
 			glm::quat adjust = glm::rotation(
 				player.transform->rotation * glm::vec3(0.0f, 0.0f, 1.0f), //current up vector
 				walkmesh->to_world_smooth_normal(player.at) //smoothed up vector at walk location
 			);
-			player.transform->rotation = glm::normalize(adjust * player.transform->rotation);
+			temp_rot = glm::normalize(adjust * player.transform->rotation);
 		}
 
 		// check for jumping
@@ -347,12 +361,15 @@ void PlayMode::update(float elapsed) {
 				in_air = false;
 			}
 		}
-		player.transform->position.z = player.transform->position.z + z_relative;
+
+		temp_pos.z = temp_pos.z + z_relative;
 
 		// check if the new position leads to a collision
 		// create player bounding box
-		Collision::AABB player_box = Collision::AABB(player.transform->position, { 0.4f,0.15f,0.6f });
+		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.4f,0.15f,0.6f });
 		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
+
+		bool reset_pos = false;
 
 		if (on_platform) {
 			assert(obstacle_box != nullptr);
@@ -362,8 +379,9 @@ void PlayMode::update(float elapsed) {
 				obstacle_box = nullptr;
 				z_relative_threshold = 0.0f;
 			}
-		} else {
-			for (Collision::AABB & p : obstacles)
+		}
+		else {
+			for (Collision::AABB& p : obstacles)
 			{
 				if (Collision::testCollision(p, player_box))
 				{
@@ -372,19 +390,49 @@ void PlayMode::update(float elapsed) {
 						obstacle_box = &p;
 					}
 					player.at = before;
+					reset_pos = true;
 					break;
 				}
 			}
 		}
-
-		/*
-		glm::mat4x3 frame = camera->transform->make_local_to_parent();
+		
+		/*glm::mat4x3 frame = camera->transform->make_local_to_parent();
 		glm::vec3 right = frame[0];
-		//glm::vec3 up = frame[1];
+		glm::vec3 up = frame[1];
 		glm::vec3 forward = -frame[2];
+		
+		camera->transform->position += move.x * right + move.y * forward;*/
+		
 
-		camera->transform->position += move.x * right + move.y * forward;
-		*/
+		if (!reset_pos) {
+			player.transform->position = temp_pos;
+			player.transform->rotation = temp_rot;
+		}
+		else {
+			player.transform->position.z = temp_pos.z;
+		}
+		
+		
+		bool in_range = false;
+		// play a message depending on your position
+		for (int i = 0; i < (int)messages.size(); i++)
+		{
+			// check if in range of something
+			glm::vec3 diff = player.transform->position - messages[i].first;
+			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f))
+			{
+				in_range = true;
+				// if not already there
+				if (i != idx_message)
+				{
+					idx_message = i;
+				}
+			}
+		}
+		if (!in_range)
+		{
+			idx_message = -1;
+		}
 	}
 
 	//reset button press counters:
@@ -425,13 +473,21 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			0.0f, 0.0f, 0.0f, 1.0f
 		));
 
+
+		std::string draw_str = "Mouse motion looks; WASD moves; escape ungrabs mouse. "; // MODIFY THIS FOR ANY DEFAULT STRING
+		// print message string
+		if (idx_message != -1)
+		{
+			draw_str += messages[idx_message].second;
+		}
+
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion looks; WASD moves; escape ungrabs mouse",
+		lines.draw_text(draw_str,
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion looks; WASD moves; escape ungrabs mouse",
+		lines.draw_text(draw_str,
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
