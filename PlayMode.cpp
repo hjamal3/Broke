@@ -69,6 +69,8 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 
 	// create some message objects. hardcoded for now
 	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
+	messages.emplace_back(std::make_pair(glm::vec3(-8.5f, -46.0f, 5.0f), "Hold left shift to crawl. Scroll mousewheel to zoom camera."));
+	messages.emplace_back(std::make_pair(glm::vec3(-7.0f, -46.0f, 0.0f), "This is where the prototype ends for now."));
 
 	//create a player camera attached to a child of the player transform:
 	scene.transforms.emplace_back();
@@ -376,7 +378,9 @@ void PlayMode::update(float elapsed) {
 
 		// check if the new position leads to a collision
 		// create player bounding box
-		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.45f,0.4f,0.75f });
+		float player_height = 0.75f;
+		if (sliding) player_height = 0.15f;
+		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.45f,0.4f,player_height });
 		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
 
 		bool reset_pos = false;
@@ -501,12 +505,12 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 		constexpr float H = 0.09f;
 		lines.draw_text(draw_str,
-			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
+			glm::vec3(-aspect + 0.1f * H, -0.7 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
 		lines.draw_text(draw_str,
-			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
+			glm::vec3(-aspect + 0.1f * H + ofs, -0.7 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 	}
