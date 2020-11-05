@@ -104,10 +104,6 @@ void PlayMode::reset_sliding() {
 	player.transform->scale.z = player_height_default;
 }
 
-void PlayMode::reset_climbing() {
-	hold_timer = 1.0f;
-}
-
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
 
 	if (evt.type == SDL_KEYDOWN) {
@@ -131,10 +127,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_SPACE) {
-			if (!jump.pressed) {
-				jump.pressed = true;
-				return true;
-			}
+			jump.pressed = true;
+			return true;
 		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
 			if (!slide.pressed) {
 				slide.pressed = true;
@@ -156,8 +150,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_SPACE) {
 			jump.pressed = false;
-			prev_jump = false;
-			holding = false;
+			released = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
 			if (slide.pressed) {
@@ -211,9 +204,9 @@ void PlayMode::update(float elapsed) {
 		float PlayerSpeed = 35.0f;
 		glm::vec2 move = glm::vec2(0.0f);
 		
-		if (jump.pressed && !prev_jump) {
-			prev_jump = true;
+		if (jump.pressed && released) {
 			if (!in_air) {
+				released = false;
 				in_air = true;
 				jump_up_velocity = jump_speed;
 			}
@@ -320,59 +313,35 @@ void PlayMode::update(float elapsed) {
 		}
 
 		// check for jumping
-		if (in_air && !holding) {
-			if (jump_up_velocity - gravity * elapsed < max_fall_speed) {
-				jump_up_velocity = max_fall_speed;
-			}
-			else {
-				jump_up_velocity -= gravity * elapsed;
-			}
-			z_relative += jump_up_velocity * elapsed;
-			if (z_relative <= 0.0f) {
-				z_relative = 0.0f;
-				jump_up_velocity = 0.0f;
-				in_air = false;
-				on_platform = false;
-			}
-			// checking for landing
-			/*bool landed = false;
-			if (z_relative <= z_relative_threshold) {
-				float peak = z_relative + 0.5f * jump_up_velocity * jump_up_velocity / gravity;
-				if (peak > z_relative_threshold && jump_up_velocity < 0.0f) {
-					z_relative = z_relative_threshold;
-					jump_up_velocity = 0.0f;
-					in_air = false;
-					on_platform = z_relative > 0.0f;
-					landed = true;
-				} else if (z_relative <= 0.0f) {
+		if (in_air) {
+			if (!climbing) {
+				if (jump_up_velocity - gravity * elapsed < max_fall_speed) {
+					jump_up_velocity = max_fall_speed;
+				}
+				else {
+					jump_up_velocity -= gravity * elapsed;
+				}
+				z_relative += jump_up_velocity * elapsed;
+				if (z_relative <= 0.0f) {
 					z_relative = 0.0f;
-					z_relative_threshold = 0.0f;
 					jump_up_velocity = 0.0f;
 					in_air = false;
 					on_platform = false;
-					landed = true;
 				}
-			}*/
-			/*if (!landed && jump.pressed && prev_jump) {
-				if (z_relative_threshold != 0.0f) { // not on ground
-					//std::cout << z_relative_threshold - z_relative << "\n";
-					if (z_relative_threshold - z_relative > 0.0f && z_relative_threshold - z_relative < 1.0f) {
-						holding = true;
-						jump_up_velocity = 0.0f;
-					}
+			} else {
+				assert(obstacle_box != nullptr);
+				z_relative += elapsed * climb_speed;
+				float platform_height = obstacle_box->c.z + obstacle_box->r.z;
+				if (z_relative > platform_height) {
+					// climb on top!
+					z_relative = platform_height;
+					climbing = false;
+					on_platform = true;
+					in_air = false;
+					jump_up_velocity = 0.0f;
 				}
-			}*/
-		} /*else if (in_air && holding) {
-			hold_timer -= elapsed;
-			//std::printf("Holding in air %f\n", z_relative);
-			if (hold_timer < 0.0f) {
-				z_relative = z_relative_threshold;
-				hold_timer = 1.0f;
-				holding = false;
-				on_platform = true;
-				in_air = false;
 			}
-		}*/
+		}
 
 		temp_pos.z = temp_pos.z + z_relative;
 
@@ -394,27 +363,46 @@ void PlayMode::update(float elapsed) {
 				z_relative_threshold = 0.0f;
 			}
 		}*/
-		for (Collision::AABB& p : obstacles)
-		{
-			if (Collision::testCollision(p, player_box) && obstacle_box != &p)
+		// if we are climbing, we are essentially holding onto an obstacle and have no need to detect collision
+		if (!climbing) {
+			for (Collision::AABB& p : obstacles)
 			{
-				float obstacle_height = p.c.z + p.r.z;
-				if (in_air) {
-					if (jump_up_velocity < 0 && std::abs(z_relative - obstacle_height) < 0.4f) {
-						z_relative = obstacle_height;
-						jump_up_velocity = 0.0f;
-						in_air = false;
-						on_platform = true;
-						obstacle_box = &p;
+				if (Collision::testCollision(p, player_box) && obstacle_box != &p)
+				{
+					float obstacle_height = p.c.z + p.r.z;
+					if (in_air) {
+						if (jump_up_velocity < 0 && std::abs(z_relative - obstacle_height) < 0.4f) {
+							z_relative = obstacle_height;
+							jump_up_velocity = 0.0f;
+							in_air = false;
+							on_platform = true;
+							obstacle_box = &p;
+						} else {
+							// Check for two things:
+							// - Player is sufficiently close to the edge of the platform vertically
+							// - Jump key has been released from the previous press
+							if (z_relative < obstacle_height) {
+								if (obstacle_height - z_relative < 0.5f || /* on-ground climb */
+									(obstacle_height - z_relative < 2.0f && jump.pressed && released) /* in-air climb */) {
+									climbing = true;
+									obstacle_box = &p;
+								}
+							}
+						}
 					}
+					player.at = before;
+					reset_pos = true;
 				}
+				if (on_platform && obstacle_box == &p && !Collision::testCollision(p, player_box)) {
+					in_air = true;
+					on_platform = false;
+					obstacle_box = nullptr;
+				}
+			}
+		} else {
+			if (Collision::testCollision(*obstacle_box, player_box)) {
 				player.at = before;
 				reset_pos = true;
-			}
-			if (on_platform && obstacle_box == &p && !Collision::testCollision(p, player_box)) {
-				in_air = true;
-				on_platform = false;
-				obstacle_box = nullptr;
 			}
 		}
 		
