@@ -19,7 +19,6 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	void reset_sliding();
-	void reset_climbing();
 
 	//----- game state -----
 
@@ -27,16 +26,17 @@ struct PlayMode : Mode {
 	struct Button {
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
+		// uint8_t clean = 0;
 	} left, right, down, up, jump, slide;
-
-	uint8_t operation = 0;
 
 	// jumping control
 	bool in_air = false;
 	bool on_platform = false;
-	bool above_platform = false;
+	bool released = true;
 	float gravity = 30.0f;
 	float jump_up_velocity = 0.0f;
+	float max_fall_speed = -12.0f;
+	float jump_speed = 13.0f;
 	float z_relative = 0.0f;
 	float z_relative_threshold = 0.0f;
 	Collision::AABB *obstacle_box = nullptr;
@@ -45,14 +45,13 @@ struct PlayMode : Mode {
 	bool sliding = false;
 	float slide_duration = 1.2f;
 	float slide_duration_reset = 1.2f;
-	float friction = 15.0f;
+	float friction = 17.0f;
 	float slide_velocity = 0.0f;
 
 
 	// climbing control
-	bool prev_jump = false;
-	bool holding = true;
-	float hold_timer = 1.0f;
+	bool climbing = false;
+	float climb_speed = 10.0f;
 
 	// camera control
 	float camera_dist_y = 5.0f;
