@@ -44,6 +44,20 @@ Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const
 	return ret;
 });
 
+
+void PlayMode::update_camera() {
+	player.camera->transform->position.x = std::cos(yaw) * camera_dist + player.transform->position.x;
+	player.camera->transform->position.y = std::sin(yaw) * camera_dist + player.transform->position.y;
+	player.camera->transform->position.z = std::sin(pitch) * camera_dist + player.transform->position.z + look_offset.z;
+
+	glm::vec3 up = walkmesh->to_world_smooth_normal(player.at);
+	glm::mat4x3 frame = player.camera->transform->make_local_to_world();
+	glm::vec3 pos = frame[3];
+
+	glm::mat4 view = glm::lookAt(pos, player.transform->position + look_offset, up);
+	player.camera->transform->rotation = glm::conjugate(glm::quat_cast(view));
+}
+
 PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//create a player transform:
 	for (auto& transform : scene.transforms) {
@@ -70,7 +84,6 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	// create some message objects. hardcoded for now
 	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
 	messages.emplace_back(std::make_pair(glm::vec3(-8.5f, -46.0f, 5.0f), "Hold left shift to crawl. Scroll mousewheel to zoom camera."));
-	messages.emplace_back(std::make_pair(glm::vec3(-7.0f, -46.0f, 0.0f), "This is where the prototype ends for now."));
 
 	//create a player camera attached to a child of the player transform:
 	scene.transforms.emplace_back();
@@ -78,16 +91,17 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	player.camera = &scene.cameras.back();
 	player.camera->fovy = glm::radians(60.0f);
 	player.camera->near = 0.01f;
-	player.camera->transform->parent = player.transform;
+	//player.camera->transform->parent = player.transform;
 
 	//player's eyes are 1.8 units above the ground:
-	player.camera->transform->position = glm::vec3(0.0f, -5.0f, 5.0f);
-
-	//rotate camera facing direction (-z) to player facing direction (+y):
-	player.camera->transform->rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	//player.camera->transform->position = glm::vec3(0.0f, -5.0f, 5.0f);
 
 	//start player walking at nearest walk point:
 	player.at = walkmesh->nearest_walk_point(player.transform->position);
+
+	//rotate camera facing direction (-z) to player facing direction (+y):
+	//player.camera->transform->rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	update_camera();
 
 	player_height_default = player.transform->scale.z;
 
@@ -170,27 +184,35 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				-evt.motion.yrel / float(window_size.y)
 			);
 			glm::vec3 up = walkmesh->to_world_smooth_normal(player.at);
+
 			player.transform->rotation = glm::angleAxis(-motion.x * player.camera->fovy, up) * player.transform->rotation;
 
-			float pitch = glm::pitch(player.camera->transform->rotation);
-			pitch += motion.y * player.camera->fovy;
+			//camera_pitch += 1.5f * motion.y * player.camera->fovy;
+			yaw += -motion.x * player.camera->fovy;
+			if (yaw < -M_PI) yaw += 2.0f * float(M_PI);
+			if (yaw >= M_PI) yaw -= 2.0f * float(M_PI);
+
+			//float pitch = glm::pitch(player.camera->transform->rotation);
+			pitch -= motion.y * player.camera->fovy;
+			if (pitch < -M_PI / 2) pitch = float(-M_PI) / 2;
+			if (pitch > M_PI / 2) pitch = float(M_PI) / 2;
 			//camera looks down -z (basically at the player's feet) when pitch is at zero.
-			pitch = std::min(pitch, 0.95f * 3.1415926f);
-			pitch = std::max(pitch, 0.05f * 3.1415926f);
-			player.camera->transform->rotation = glm::angleAxis(pitch, glm::vec3(1.0f, 0.0f, 0.0f));
+			//pitch = std::min(pitch, 0.95f * 3.1415926f);
+			//pitch = std::max(pitch, 0.05f * 3.1415926f);
+			//player.camera->transform->rotation = glm::angleAxis(pitch, glm::vec3(1.0f, 0.0f, 0.0f));
+			//glm::mat4 view = glm::lookAt(player.camera->transform->position, player.transform->position, up);
+			update_camera();
 
 			return true;
 		}
 	} else if (evt.type == SDL_MOUSEWHEEL) {
-		if (evt.wheel.y > 0 && camera_dist_y > camera_min_dist) {
-			camera_dist_y -= 1.0f;
-			camera_dist_z -= 0.2f;
+		if (evt.wheel.y > 0 && camera_dist > camera_min_dist) {
+			camera_dist -= 1.0f;
 		}
-		else if (evt.wheel.y < 0 && camera_dist_y < camera_max_dist) {
-			camera_dist_y += 1.0f;
-			camera_dist_z += 0.2f;
+		else if (evt.wheel.y < 0 && camera_dist < camera_max_dist) {
+			camera_dist += 1.0f;
 		}
-		player.camera->transform->position = glm::vec3(0.0f, -camera_dist_y, camera_dist_z);
+		update_camera();
 		return true;
 	}
 
@@ -444,6 +466,8 @@ void PlayMode::update(float elapsed) {
 			idx_message = -1;
 		}
 	}
+
+	update_camera();
 
 	//reset button press counters:
 	left.downs = 0;
