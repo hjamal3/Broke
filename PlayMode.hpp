@@ -43,11 +43,17 @@ struct PlayMode : Mode {
 
 	// slide control
 	bool sliding = false;
-	float slide_duration = 1.2f;
-	float slide_duration_reset = 1.2f;
-	float friction = 17.0f;
-	float slide_velocity = 0.0f;
+	//float slide_duration = 1.2f;
+	//float slide_duration_reset = 1.2f;
+	float friction = 1.5f;
+	//float slide_velocity = 0.0f;
 
+	// player motion
+	const float PlayerSpeedMax = 35.0f;
+	float PlayerSpeed = 0;
+	float speed_multiplier = 0.0f; // 0 to 1
+	const float accel = 3.0f;
+	const float low_speed = 0.2f;
 
 	// climbing control
 	bool climbing = false;
