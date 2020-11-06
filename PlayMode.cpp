@@ -99,8 +99,8 @@ PlayMode::~PlayMode() {
 void PlayMode::reset_sliding() {
 	slide.pressed = false;
 	sliding = false;
-	slide_duration = slide_duration_reset;
-	slide_velocity = 0.0f;
+	//slide_duration = slide_duration_reset;
+	//slide_velocity = 0.0f;
 	player.transform->scale.z = player_height_default;
 }
 
@@ -200,8 +200,18 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 void PlayMode::update(float elapsed) {
 	//player walking:
 	{
+		// set player speed 
+		if (!(up.pressed || down.pressed || left.pressed || right.pressed || slide.pressed || jump.pressed)  ) // player is still
+		{
+			speed_multiplier = low_speed; // don't start at 0 speed, this looks better
+		}
+		else if (!sliding)
+		{
+			speed_multiplier = std::min(1.0f, speed_multiplier + accel*elapsed);
+		}
+		PlayerSpeed = PlayerSpeedMax * speed_multiplier; // overwritten later if sliding
+
 		//combine inputs into a move:
-		float PlayerSpeed = 35.0f;
 		glm::vec2 move = glm::vec2(0.0f);
 		
 		if (jump.pressed && released) {
@@ -214,21 +224,14 @@ void PlayMode::update(float elapsed) {
 
 		if (slide.pressed && !sliding) {
 			sliding = true;
-			slide_velocity = PlayerSpeed * 0.8f;
 			player.transform->scale.z = 0.6f * player_height_default;
 		}
 
 		if (sliding && !in_air) {
 			// when sliding, bypass WASD command and only charge in the direction the player faces
 			move.y = 1.0f;
-			if (slide_duration <= 0.0f) {
-				PlayerSpeed = slide_velocity;
-			}
-			else {
-				slide_velocity -= friction * elapsed;
-				slide_duration -= elapsed;
-				PlayerSpeed = slide_velocity;
-			}
+			speed_multiplier -= friction * elapsed;
+			speed_multiplier = std::max(low_speed, speed_multiplier);
 		}
 		else if (sliding && in_air) {
 			reset_sliding();
