@@ -348,15 +348,16 @@ void PlayMode::update(float elapsed) {
 						// slide x or y 
 						if (collision_x_or_y == 2) // collision in y-axis
 						{
-							remain = glm::vec4(remain_copy.x / 2.0f, 0.0f, 0.0f, 0.0f); // only move in x-axis
+							remain = glm::vec4(remain_copy.x, 0.0f, 0.0f, 0.0f); // only move in x-axis
+							step_in_mesh(remain);
+							step_in_3D(temp_pos, temp_rot);
 						}
-						else // collision in x-axis
+						else if (collision_x_or_y == 1)// collision in x-axis
 						{
-							remain = glm::vec4(0.0f, remain_copy.y / 2.0f, 0.0f, 0.0f); // only move in y-axis
-
+							remain = glm::vec4(0.0f, remain_copy.y, 0.0f, 0.0f); // only move in y-axis
+							step_in_mesh(remain);
+							step_in_3D(temp_pos, temp_rot);
 						}
-						step_in_mesh(remain);
-						step_in_3D(temp_pos, temp_rot);
 					}
 					else
 					{
