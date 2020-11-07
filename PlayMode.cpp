@@ -249,71 +249,18 @@ void PlayMode::update(float elapsed) {
 
 		//get move in world coordinate system:
 		glm::vec3 remain = player.transform->make_local_to_world() * glm::vec4(move.x, move.y, 0.0f, 0.0f);
+		glm::vec3 remain_copy = remain;
 
 		// WalkPoint before moving
 		WalkPoint before = player.at;
 
-		//using a for() instead of a while() here so that if walkpoint gets stuck in
-		// some awkward case, code will not infinite loop:
-		for (uint32_t iter = 0; iter < 10; ++iter) {
-			if (remain == glm::vec3(0.0f)) break;
-			WalkPoint end;
-			float time;
-			walkmesh->walk_in_triangle(player.at, remain, &end, &time);
-			player.at = end;
-			if (time == 1.0f) {
-				//finished within triangle:
-				remain = glm::vec3(0.0f);
-				break;
-			}
-			//some step remains:
-			remain *= (1.0f - time);
-			//try to step over edge:
-			glm::quat rotation;
-			if (walkmesh->cross_edge(player.at, &end, &rotation)) {
-				//stepped to a new triangle:
-				player.at = end;
-				//rotate step to follow surface:
-				remain = rotation * remain;
-			}
-			else {
-				//ran into a wall, bounce / slide along it:
-				glm::vec3 const& a = walkmesh->vertices[player.at.indices.x];
-				glm::vec3 const& b = walkmesh->vertices[player.at.indices.y];
-				glm::vec3 const& c = walkmesh->vertices[player.at.indices.z];
-				glm::vec3 along = glm::normalize(b - a);
-				glm::vec3 normal = glm::normalize(glm::cross(b - a, c - a));
-				glm::vec3 in = glm::cross(normal, along);
+		// step in walkmesh.
+		step_in_mesh(remain);
 
-				//check how much 'remain' is pointing out of the triangle:
-				float d = glm::dot(remain, in);
-				if (d < 0.0f) {
-					//bounce off of the wall:
-					remain += (-1.25f * d) * in;
-				}
-				else {
-					//if it's just pointing along the edge, bend slightly away from wall:
-					remain += 0.01f * d * in;
-				}
-			}
-		}
-
-		if (remain != glm::vec3(0.0f)) {
-			std::cout << "NOTE: code used full iteration budget for walking." << std::endl;
-		}
-
-		//update player's position to respect walking:
-		glm::vec3 temp_pos = walkmesh->to_world_point(player.at);
+		//update player's 3D position to respect walking
+		glm::vec3 temp_pos;
 		glm::quat temp_rot;
-
-		{ //update player's rotation to respect local (smooth) up-vector:
-
-			glm::quat adjust = glm::rotation(
-				player.transform->rotation * glm::vec3(0.0f, 0.0f, 1.0f), //current up vector
-				walkmesh->to_world_smooth_normal(player.at) //smoothed up vector at walk location
-			);
-			temp_rot = glm::normalize(adjust * player.transform->rotation);
-		}
+		step_in_3D(temp_pos, temp_rot);
 
 		// check for jumping
 		if (in_air) {
@@ -369,8 +316,9 @@ void PlayMode::update(float elapsed) {
 		// if we are climbing, we are essentially holding onto an obstacle and have no need to detect collision
 		if (!climbing) {
 			for (Collision::AABB& p : obstacles)
-			{
-				if (Collision::testCollision(p, player_box) && obstacle_box != &p)
+			{	
+				int collision_x_or_y = Collision::testCollision(p, player_box);
+				if (collision_x_or_y && obstacle_box != &p)
 				{
 					float obstacle_height = p.c.z + p.r.z;
 					if (in_air) {
@@ -393,8 +341,27 @@ void PlayMode::update(float elapsed) {
 							}
 						}
 					}
-					player.at = before;
-					reset_pos = true;
+					player.at = before; // revert position
+					// if not on a platform and not in the air, you want to slide along the obstacle in direction of no collision
+					if (!in_air && !on_platform)
+					{
+						// slide x or y 
+						if (collision_x_or_y == 2) // collision in y-axis
+						{
+							remain = glm::vec4(remain_copy.x / 2.0f, 0.0f, 0.0f, 0.0f); // only move in x-axis
+						}
+						else // collision in x-axis
+						{
+							remain = glm::vec4(0.0f, remain_copy.y / 2.0f, 0.0f, 0.0f); // only move in y-axis
+
+						}
+						step_in_mesh(remain);
+						step_in_3D(temp_pos, temp_rot);
+					}
+					else
+					{
+						reset_pos = true;
+					}
 				}
 				if (on_platform && obstacle_box == &p && !Collision::testCollision(p, player_box)) {
 					in_air = true;
@@ -409,14 +376,7 @@ void PlayMode::update(float elapsed) {
 			}
 		}
 		
-		/*glm::mat4x3 frame = camera->transform->make_local_to_parent();
-		glm::vec3 right = frame[0];
-		glm::vec3 up = frame[1];
-		glm::vec3 forward = -frame[2];
-		
-		camera->transform->position += move.x * right + move.y * forward;*/
-		
-
+		// there was no collision, update player's transform
 		if (!reset_pos) {
 			player.transform->position = temp_pos;
 			player.transform->rotation = temp_rot;
@@ -424,7 +384,6 @@ void PlayMode::update(float elapsed) {
 		else {
 			player.transform->position.z = temp_pos.z;
 		}
-		
 		
 		bool in_range = false;
 		// play a message depending on your position
@@ -506,4 +465,70 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 	}
 	GL_ERRORS();
+}
+
+void PlayMode::step_in_3D(glm::vec3 & pos, glm::quat & rot)
+{
+	pos = walkmesh->to_world_point(player.at);
+
+	{ //update player's rotation to respect local (smooth) up-vector:
+
+		glm::quat adjust = glm::rotation(
+			player.transform->rotation * glm::vec3(0.0f, 0.0f, 1.0f), //current up vector
+			walkmesh->to_world_smooth_normal(player.at) //smoothed up vector at walk location
+		);
+		rot = glm::normalize(adjust * player.transform->rotation);
+	}
+}
+void PlayMode::step_in_mesh(glm::vec3& remain)
+{
+	//using a for() instead of a while() here so that if walkpoint gets stuck in
+		// some awkward case, code will not infinite loop:
+	for (uint32_t iter = 0; iter < 10; ++iter) {
+		if (remain == glm::vec3(0.0f)) break;
+		WalkPoint end;
+		float time;
+		walkmesh->walk_in_triangle(player.at, remain, &end, &time);
+		player.at = end;
+		if (time == 1.0f) {
+			//finished within triangle:
+			remain = glm::vec3(0.0f);
+			break;
+		}
+		//some step remains:
+		remain *= (1.0f - time);
+		//try to step over edge:
+		glm::quat rotation;
+		if (walkmesh->cross_edge(player.at, &end, &rotation)) {
+			//stepped to a new triangle:
+			player.at = end;
+			//rotate step to follow surface:
+			remain = rotation * remain;
+		}
+		else {
+			//ran into a wall, bounce / slide along it:
+			glm::vec3 const& a = walkmesh->vertices[player.at.indices.x];
+			glm::vec3 const& b = walkmesh->vertices[player.at.indices.y];
+			glm::vec3 const& c = walkmesh->vertices[player.at.indices.z];
+			glm::vec3 along = glm::normalize(b - a);
+			glm::vec3 normal = glm::normalize(glm::cross(b - a, c - a));
+			glm::vec3 in = glm::cross(normal, along);
+
+			//check how much 'remain' is pointing out of the triangle:
+			float d = glm::dot(remain, in);
+			if (d < 0.0f) {
+				//bounce off of the wall:
+				remain += (-1.25f * d) * in;
+			}
+			else {
+				//if it's just pointing along the edge, bend slightly away from wall:
+				remain += 0.01f * d * in;
+			}
+		}
+	}
+
+
+	if (remain != glm::vec3(0.0f)) {
+		std::cout << "NOTE: code used full iteration budget for walking." << std::endl;
+	}
 }

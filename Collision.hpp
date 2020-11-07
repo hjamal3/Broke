@@ -38,12 +38,12 @@ namespace Collision
 		glm::vec3 r; // radius in x,y,z direction
 	};
 
-	bool testAABBAABB(const AABB& a, const AABB& b);
+	int testAABBAABB(const AABB& a, const AABB& b);
 
 	// this function only checks for overlapping in X and Y direction
 	bool testAABBAABBXY(const AABB& a, const AABB& b);
 
-	bool testCollision(const Primitive& a, const Primitive& b);
+	int testCollision(const Primitive& a, const Primitive& b);
 
 	bool testCollisionXY(const Primitive& a, const Primitive& b);
 }
