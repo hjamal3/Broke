@@ -315,11 +315,13 @@ void PlayMode::update(float elapsed) {
 		}*/
 		// if we are climbing, we are essentially holding onto an obstacle and have no need to detect collision
 		if (!climbing) {
+			bool collision = false; // was there a collision update?
 			for (Collision::AABB& p : obstacles)
 			{	
 				int collision_x_or_y = Collision::testCollision(p, player_box);
 				if (collision_x_or_y && obstacle_box != &p)
 				{
+					collision = true;
 					float obstacle_height = p.c.z + p.r.z;
 					if (in_air) {
 						if (jump_up_velocity < 0 && std::abs(z_relative - obstacle_height) < 0.4f) {
@@ -346,14 +348,16 @@ void PlayMode::update(float elapsed) {
 					if (!in_air && !on_platform)
 					{
 						// slide x or y 
-						if (collision_x_or_y == 2) // collision in y-axis
+						if ((collision_x_or_y == 2 && last_collision != 1) || (collision_x_or_y == 1 && last_collision == 2)) // collision in y-axis so move only in x-direction
 						{
+							last_collision = 2;
 							remain = glm::vec4(remain_copy.x, 0.0f, 0.0f, 0.0f); // only move in x-axis
 							step_in_mesh(remain);
 							step_in_3D(temp_pos, temp_rot);
 						}
-						else if (collision_x_or_y == 1)// collision in x-axis
+						else if ((collision_x_or_y == 1 && last_collision != 2) || (collision_x_or_y == 2 && last_collision == 1)) // collision in x-axis so move in y-direction
 						{
+							last_collision = 1;
 							remain = glm::vec4(0.0f, remain_copy.y, 0.0f, 0.0f); // only move in y-axis
 							step_in_mesh(remain);
 							step_in_3D(temp_pos, temp_rot);
@@ -369,6 +373,10 @@ void PlayMode::update(float elapsed) {
 					on_platform = false;
 					obstacle_box = nullptr;
 				}
+			}
+			if (!collision)
+			{
+				last_collision = 0; // if there was no collision, clear
 			}
 		} else {
 			if (Collision::testCollision(*obstacle_box, player_box)) {

@@ -56,6 +56,7 @@ struct PlayMode : Mode {
 	float speed_multiplier = 0.0f; // 0 to 1
 	const float accel = 3.0f;
 	const float low_speed = 0.2f;
+	int last_collision = 0;
 
 	// climbing control
 	bool climbing = false;
