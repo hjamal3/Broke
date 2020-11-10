@@ -65,7 +65,7 @@ struct PlayMode : Mode {
 	// camera control
 	void update_camera();
 	float camera_dist = 3.0f;
-	float camera_max_dist = 5.0f;
+	float camera_max_dist = 4.0f;
 	float camera_min_dist = 1.0f;
 	float yaw = -float(M_PI)/2.0f;
 	float pitch = 0.25f;
