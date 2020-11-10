@@ -62,6 +62,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//create a player transform:
 	for (auto& transform : scene.transforms) {
 		if (transform.name == "Player") player.transform = &transform;
+		if (transform.name == "PlayerShadow") shadow = &transform;
 	}
 
 	// go through the meshes and find Cube objects. Convert to naming convention later
@@ -80,6 +81,10 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	}
 
 	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
+	if (shadow == nullptr) throw std::runtime_error("GameObject not found.");
+
+	shadow->position = glm::vec3(player.transform->position.x, player.transform->position.y, shadow->position.z);
+	shadow_base_height = shadow->position.z;
 
 	// create some message objects. hardcoded for now
 	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
@@ -443,7 +448,21 @@ void PlayMode::update(float elapsed) {
 		else {
 			player.transform->position.z = temp_pos.z;
 		}
-		
+
+		// set shadow pos
+		shadow->position.x = player.transform->position.x;
+		shadow->position.y = player.transform->position.y;
+		Collision::AABB *tmp = nullptr;
+		for (Collision::AABB& p : obstacles) {
+			if (Collision::testCollisionXYStrict(p, player_box)) {
+				tmp = &p;
+				shadow->position.z = p.c.z + p.r.z + shadow_base_height;
+				break;
+			}
+		}
+		if (tmp == nullptr) {
+			shadow->position.z = shadow_base_height;
+		}
 		
 		bool in_range = false;
 		// play a message depending on your position
@@ -493,6 +512,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS); //this is the default depth comparison function, but FYI you can change it.
 
 	scene.draw(*player.camera);
