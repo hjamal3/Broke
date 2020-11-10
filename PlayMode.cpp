@@ -454,7 +454,7 @@ void PlayMode::update(float elapsed) {
 		shadow->position.y = player.transform->position.y;
 		Collision::AABB *tmp = nullptr;
 		for (Collision::AABB& p : obstacles) {
-			if (Collision::testCollisionXYStrict(p, player_box)) {
+			if (Collision::testCollisionXYStrict(p, player_box) && p.r.z + p.c.z <= player.transform->position.z) {
 				tmp = &p;
 				shadow->position.z = p.c.z + p.r.z + shadow_base_height;
 				break;
