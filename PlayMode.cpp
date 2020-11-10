@@ -324,7 +324,7 @@ void PlayMode::update(float elapsed) {
 
 		// check if the new position leads to a collision
 		// create player bounding box
-		float player_height = 0.75f;
+		float player_height = 0.75f/2.0f;
 		if (sliding) player_height = 0.15f;
 		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.45f,0.4f,player_height });
 		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
@@ -342,6 +342,13 @@ void PlayMode::update(float elapsed) {
 					collision = true;
 					float obstacle_height = p.c.z + p.r.z;
 					if (in_air) {
+						// if the top of player hits bottom of obstacle, set velocity to 0.0f
+						if (jump_up_velocity > 0 && std::abs((p.c.z - p.r.z) - (player_box.c.z + player_box.r.z))< 0.1f)
+						{
+							z_relative -= jump_up_velocity * elapsed;
+							jump_up_velocity = 0.0f;
+						}
+
 						if (jump_up_velocity < 0 && std::abs(z_relative - obstacle_height) < 0.4f) {
 							z_relative = obstacle_height;
 							jump_up_velocity = 0.0f;
