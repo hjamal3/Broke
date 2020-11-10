@@ -40,8 +40,8 @@ struct PlayMode : Mode {
 	float max_fall_speed = -12.0f;
 	float jump_speed = 13.0f;
 	float z_relative = 0.0f;
-	float z_relative_threshold = 0.0f;
 	Collision::AABB *obstacle_box = nullptr;
+	Collision::AABB *platform_box = nullptr;
 
 	// slide control
 	bool sliding = false;
@@ -85,6 +85,8 @@ struct PlayMode : Mode {
 		// Player contains a bounding box
 
 	} player;
+	Scene::Transform *shadow = nullptr;
+	float shadow_base_height;
 	float player_height_default;
 
 	// primitives info

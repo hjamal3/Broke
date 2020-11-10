@@ -42,10 +42,12 @@ namespace Collision
 
 	// this function only checks for overlapping in X and Y direction
 	bool testAABBAABBXY(const AABB& a, const AABB& b);
+	bool testAABBAABBXYStrict(const AABB& a, const AABB& b);
 
 	int testCollision(const Primitive& a, const Primitive& b);
 
 	bool testCollisionXY(const Primitive& a, const Primitive& b);
+	bool testCollisionXYStrict(const Primitive& a, const Primitive& b);
 }
 
 
