@@ -326,15 +326,6 @@ void PlayMode::update(float elapsed) {
 
 		bool reset_pos = false;
 
-		/*if (on_platform) {
-			assert(obstacle_box != nullptr);
-			if (!Collision::testCollisionXY(*obstacle_box, player_box)) {
-				in_air = true;
-				on_platform = false;
-				obstacle_box = nullptr;
-				z_relative_threshold = 0.0f;
-			}
-		}*/
 		// if we are climbing, we are essentially holding onto an obstacle and have no need to detect collision
 		if (!climbing) {
 			bool collision = false; // was there a collision update?
@@ -367,23 +358,22 @@ void PlayMode::update(float elapsed) {
 					}
 					player.at = before; // revert position
 					// if not on a platform and not in the air, you want to slide along the obstacle in direction of no collision
-					if (!in_air && !on_platform)
+					if (!on_platform)
 					{
 						// slide x or y 
 						if ((collision_x_or_y == 2 && last_collision != 1) || (collision_x_or_y == 1 && last_collision == 2)) // collision in y-axis so move only in x-direction
 						{
 							last_collision = 2;
 							remain = glm::vec4(remain_copy.x, 0.0f, 0.0f, 0.0f); // only move in x-axis
-							step_in_mesh(remain);
-							step_in_3D(temp_pos, temp_rot);
 						}
-						else if ((collision_x_or_y == 1 && last_collision != 2) || (collision_x_or_y == 2 && last_collision == 1)) // collision in x-axis so move in y-direction
+						else// if ((collision_x_or_y == 1 && last_collision != 2) || (collision_x_or_y == 2 && last_collision == 1)) // collision in x-axis so move in y-direction
 						{
 							last_collision = 1;
 							remain = glm::vec4(0.0f, remain_copy.y, 0.0f, 0.0f); // only move in y-axis
-							step_in_mesh(remain);
-							step_in_3D(temp_pos, temp_rot);
 						}
+						step_in_mesh(remain);
+						step_in_3D(temp_pos, temp_rot);
+						temp_pos.z = temp_pos.z + z_relative; 
 					}
 					else
 					{
