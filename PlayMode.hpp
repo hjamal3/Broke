@@ -63,11 +63,13 @@ struct PlayMode : Mode {
 	float climb_speed = 10.0f;
 
 	// camera control
-	float camera_dist_y = 5.0f;
-	float camera_dist_z = 5.0f;
-	float camera_max_dist = 8.0f;
-	float camera_min_dist = 0.0f;
-
+	void update_camera();
+	float camera_dist = 3.0f;
+	float camera_max_dist = 5.0f;
+	float camera_min_dist = 1.0f;
+	float yaw = -float(M_PI)/2.0f;
+	float pitch = 0.25f;
+	glm::vec3 look_offset = glm::vec3(0.0f, 0.0f, 0.8f);
 
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
