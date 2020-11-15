@@ -66,17 +66,28 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	}
 
 	// go through the meshes and find Cube objects. Convert to naming convention later
-	std::string str("o_");
+	std::string str_obstacle("o_");
+	std::string str_barrier("c_");
 	const auto& meshes = phonebank_meshes->meshes;
 	for (auto& mesh : meshes) {
 
-		if (mesh.first.find(str) != std::string::npos)
+		if (mesh.first.find(str_obstacle) != std::string::npos)
 		{
 			auto& min = mesh.second.min;
 			auto& max = mesh.second.max;
 			glm::vec3 center = 0.5f * (min + max);
 			glm::vec3 rad = 0.5f * (max - min);
 			obstacles.emplace_back(Collision::AABB(center, rad));
+		}
+		else if (mesh.first.find(str_barrier) != std::string::npos)
+		{
+			auto& min = mesh.second.min;
+			auto& max = mesh.second.max;
+			glm::vec3 center = 0.5f * (min + max);
+			glm::vec3 rad = 0.5f * (max - min);
+			Collision::AABB box = Collision::AABB(center, rad);
+			box.r.z = 100.0f; // set a big vertical barrier so you can never climb the obstacle
+			obstacles.emplace_back(box);
 		}
 	}
 
