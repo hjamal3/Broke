@@ -343,7 +343,8 @@ void PlayMode::update(float elapsed) {
 					float obstacle_height = p.c.z + p.r.z;
 					if (in_air) {
 						// if the top of player hits bottom of obstacle, set velocity to 0.0f
-						if (jump_up_velocity > 0 && std::abs((p.c.z - p.r.z) - (player_box.c.z + player_box.r.z))< 0.1f)
+						if (jump_up_velocity > 0 && p.c.z - p.r.z <= player_box.c.z + player_box.r.z &&
+							p.c.z - p.r.z >= player_box.c.z + player_box.r.z - jump_up_velocity * elapsed)
 						{
 							z_relative -= jump_up_velocity * elapsed;
 							jump_up_velocity = 0.0f;
@@ -418,12 +419,18 @@ void PlayMode::update(float elapsed) {
 		Collision::AABB *tmp = nullptr;
 		for (Collision::AABB& p : obstacles) {
 			if (Collision::testCollisionXYStrict(p, player_box) && p.r.z + p.c.z <= player.transform->position.z) {
-				tmp = &p;
-				shadow->position.z = p.c.z + p.r.z + shadow_base_height;
-				break;
+				if (tmp == nullptr) {
+					tmp = &p;
+				} else {
+					if (p.r.z + p.c.z >= tmp->c.z + tmp->r.z) {
+						tmp = &p;
+					}
+				}
 			}
 		}
-		if (tmp == nullptr) {
+		if (tmp != nullptr) {
+			shadow->position.z = tmp->c.z + tmp->r.z + shadow_base_height;
+		} else {
 			shadow->position.z = shadow_base_height;
 		}
 		
