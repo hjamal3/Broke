@@ -342,7 +342,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void PlayMode::update(float elapsed) {
 	if (prologue) {
-		if (prologue_message < prologue_messages.size()) return;
+		if (((uint32_t) prologue_message) < prologue_messages.size()) return;
 		prologue = false;
 	}
 
