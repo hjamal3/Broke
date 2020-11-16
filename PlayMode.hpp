@@ -19,7 +19,7 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 	void step_in_3D(glm::vec3& pos, glm::quat& rot);
 	void step_in_mesh(glm::vec3& remain);
-	void draw_textbox(float aspect, glm::vec2& center, glm::vec2& radius);
+	void draw_textbox(float aspect, glm::vec2 center, glm::vec2 radius);
 
 	void reset_sliding();
 

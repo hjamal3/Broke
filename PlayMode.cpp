@@ -186,7 +186,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	messages.emplace_back(std::make_pair(glm::vec3(-8.5f, -46.0f, 5.0f), "Hold left shift to crawl. Scroll mousewheel to zoom camera."));
 
 	// intialize the prologue introductory texts
-	prologue_messages.push_back("I'm a broke octopus. (Press Space to Continue)");
+	prologue_messages.push_back("I'm a broke octopus./Press Space to Continue");
 	prologue_messages.push_back("I used to live in the depth of the ocean with my girlfriend...");
 	prologue_messages.push_back("Until I proposed to her...");
 	prologue_messages.push_back("I thought that was it. But one day, she was gone.");
@@ -554,13 +554,6 @@ void PlayMode::update(float elapsed) {
 		} else {
 			shadow->position.z = shadow_base_height;
 		}
-
-		// see if bumped into an ingredient
-		for (Collision::AABB& p : ingredients) {
-			if (Collision::testCollision(p, player_box)) {
-				
-			}
-		}
 		
 		bool in_range = false;
 		// play a message depending on your position
@@ -729,18 +722,15 @@ void PlayMode::draw_textbox(float aspect, glm::vec2 center, glm::vec2 radius)
 
 	std::vector< Vertex > vertices;
 
-	auto draw_rectangle = [&vertices](glm::vec2 const &center, glm::vec2 const &radius, glm::u8vec4 const &color) {
-		//draw rectangle as two CCW-oriented triangles:
-		vertices.emplace_back(glm::vec3(center.x-radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
-		vertices.emplace_back(glm::vec3(center.x+radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
-		vertices.emplace_back(glm::vec3(center.x+radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	auto color = glm::u8vec4(128,128,0,255);
 
-		vertices.emplace_back(glm::vec3(center.x-radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
-		vertices.emplace_back(glm::vec3(center.x+radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
-		vertices.emplace_back(glm::vec3(center.x-radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
-	};
+	vertices.emplace_back(glm::vec3(center.x-radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	vertices.emplace_back(glm::vec3(center.x+radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	vertices.emplace_back(glm::vec3(center.x+radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
 
-	draw_rectangle(center, radius, glm::u8vec4(128,128,0,255));
+	vertices.emplace_back(glm::vec3(center.x-radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	vertices.emplace_back(glm::vec3(center.x+radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	vertices.emplace_back(glm::vec3(center.x-radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer); //set vertex_buffer as current
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_STREAM_DRAW); //upload vertices array
