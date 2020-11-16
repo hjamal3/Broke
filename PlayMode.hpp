@@ -3,6 +3,7 @@
 #include "Scene.hpp"
 #include "WalkMesh.hpp"
 #include "Collision.hpp"
+#include "BoneAnimation.hpp"
 
 #include <glm/glm.hpp>
 
@@ -51,10 +52,10 @@ struct PlayMode : Mode {
 	//float slide_velocity = 0.0f;
 
 	// player motion
-	const float PlayerSpeedMax = 35.0f;
+	const float PlayerSpeedMax = 12.0f;
 	float PlayerSpeed = 0;
 	float speed_multiplier = 0.0f; // 0 to 1
-	const float accel = 3.0f;
+	const float accel = 2.0f;
 	const float low_speed = 0.2f;
 	int last_collision = 0;
 
@@ -95,5 +96,10 @@ struct PlayMode : Mode {
 	// coordinates of messages. 
 	std::vector<std::pair< glm::vec3, std::string>> messages;
 	int idx_message = -1; // keep an index of your location, so that you don't keep playing the same message over and over
+
+	//animation controls
+	std::vector< BoneAnimationPlayer > player_animations;
+
+	float jump_step = 0.0f;
 
 };

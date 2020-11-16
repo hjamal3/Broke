@@ -105,7 +105,9 @@ GAME_NAMES =
 	PlayMode
 	main
 	LitColorTextureProgram
+	bone_vertex_color_program
 	#ColorTextureProgram #not used right now, but you might want it
+	BoneAnimation
 	Sound
 	load_wav
 	load_opus

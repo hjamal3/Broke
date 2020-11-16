@@ -1,6 +1,7 @@
 #include "PlayMode.hpp"
 
 #include "LitColorTextureProgram.hpp"
+#include "bone_vertex_color_program.hpp"
 
 #include "DrawLines.hpp"
 #include "Mesh.hpp"
@@ -10,18 +11,21 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/string_cast.hpp>
+
+#include "BoneAnimation.hpp"
 
 #include <random>
 
 GLuint phonebank_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > phonebank_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("phone-bank.pnct"));
+	MeshBuffer const *ret = new MeshBuffer(data_path("level1.pnct"));
 	phonebank_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
 Load< Scene > phonebank_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("phone-bank.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+	return new Scene(data_path("level1.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
 		Mesh const &mesh = phonebank_meshes->lookup(mesh_name);
 
 		scene.drawables.emplace_back(transform);
@@ -39,9 +43,24 @@ Load< Scene > phonebank_scene(LoadTagDefault, []() -> Scene const * {
 
 WalkMesh const *walkmesh = nullptr;
 Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
-	WalkMeshes *ret = new WalkMeshes(data_path("phone-bank.w"));
+	WalkMeshes *ret = new WalkMeshes(data_path("level1.w"));
 	walkmesh = &ret->lookup("WalkMesh");
 	return ret;
+});
+
+BoneAnimation::Animation const* player_anim_jump = nullptr;
+//BoneAnimation::Animation const* plant_wind = nullptr;
+
+Load< BoneAnimation > level1_banims(LoadTagDefault, []() {
+	auto ret = new BoneAnimation(data_path("level1.banims"));
+	player_anim_jump = &(ret->lookup("Jump!local"));
+	//plant_wind = &(ret->lookup("Wind!local"));
+
+	return ret;
+});
+
+Load< GLuint > level1_banims_for_bone_vertex_color_program(LoadTagDefault, []() {
+	return new GLuint(level1_banims->make_vao_for_program(bone_vertex_color_program->program));
 });
 
 
@@ -61,7 +80,7 @@ void PlayMode::update_camera() {
 PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//create a player transform:
 	for (auto& transform : scene.transforms) {
-		if (transform.name == "Player") player.transform = &transform;
+		if (transform.name == "PlayerRig") player.transform = &transform;
 		if (transform.name == "PlayerShadow") shadow = &transform;
 	}
 
@@ -109,6 +128,47 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	update_camera();
 
 	player_height_default = player.transform->scale.z;
+
+	player_animations.reserve(2);
+
+	for (auto& drawable : scene.drawables) {
+		if (drawable.transform->name == "Player.001") {
+			player_animations.emplace_back(*level1_banims, *player_anim_jump, BoneAnimationPlayer::Loop, 1.0f);
+			player_animations.back().position = 0.0f;
+			drawable.pipeline.program = bone_vertex_color_program->program;
+			drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
+			drawable.pipeline.type = level1_banims->mesh.type;
+			drawable.pipeline.start = level1_banims->mesh.start;
+			drawable.pipeline.count = level1_banims->mesh.count;
+			drawable.pipeline.OBJECT_TO_CLIP_mat4 = bone_vertex_color_program->object_to_clip_mat4;
+			//drawable.pipeline.OBJECT_TO_CLIP_mat4 = lit_color_texture_program_pipeline.OBJECT_TO_CLIP_mat4;
+			drawable.pipeline.OBJECT_TO_LIGHT_mat4x3 = bone_vertex_color_program->object_to_light_mat4x3;
+			drawable.pipeline.NORMAL_TO_LIGHT_mat3 = bone_vertex_color_program->normal_to_light_mat3;
+
+			BoneAnimationPlayer* anim_player = &player_animations.back();
+			drawable.pipeline.set_uniforms = [anim_player]() {
+				anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
+			};
+		}
+		/*if (drawable.transform->name == "Plant") {
+			player_animations.emplace_back(*level1_banims, *plant_wind, BoneAnimationPlayer::Loop, 1.0f);
+			player_animations.back().position = 0.0f;
+			drawable.pipeline.program = bone_vertex_color_program->program;
+			drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
+			drawable.pipeline.type = level1_banims->mesh.type;
+			drawable.pipeline.start = level1_banims->mesh.start;
+			drawable.pipeline.count = level1_banims->mesh.count;
+			drawable.pipeline.OBJECT_TO_CLIP_mat4 = bone_vertex_color_program->object_to_clip_mat4;
+			//drawable.pipeline.OBJECT_TO_CLIP_mat4 = lit_color_texture_program_pipeline.OBJECT_TO_CLIP_mat4;
+			drawable.pipeline.OBJECT_TO_LIGHT_mat4x3 = bone_vertex_color_program->object_to_light_mat4x3;
+			drawable.pipeline.NORMAL_TO_LIGHT_mat3 = bone_vertex_color_program->normal_to_light_mat3;
+
+			BoneAnimationPlayer* anim_player = &player_animations.back();
+			drawable.pipeline.set_uniforms = [anim_player]() {
+				anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
+			};
+		}*/
+	}
 
 }
 
@@ -247,6 +307,19 @@ void PlayMode::update(float elapsed) {
 				in_air = true;
 				jump_up_velocity = jump_speed;
 			}
+		}
+
+		// Update animation step
+		/*if (in_air) {
+			player_animations[0].position -= elapsed * 3.0f;
+			player_animations[0].position -= std::floor(player_animations[0].position);
+			if (player_animations[0].done()) {
+				player_animations[0].position = 1.0f;
+			}
+		}*/
+		std::cout << player_animations[0].position << std::endl;
+		if (player_animations[0].done()) {
+			player_animations[0].position = 0.0f;
 		}
 
 		if (slide.pressed && !sliding) {
@@ -444,6 +517,10 @@ void PlayMode::update(float elapsed) {
 
 	update_camera();
 
+	for (auto& anim : player_animations) {
+		anim.update(elapsed);
+	}
+
 	//reset button press counters:
 	left.downs = 0;
 	right.downs = 0;
@@ -470,6 +547,20 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS); //this is the default depth comparison function, but FYI you can change it.
+
+	{
+		//set up light positions (bone program):
+		glUseProgram(bone_vertex_color_program->program);
+
+		//don't use distant directional light at all (color == 0):
+		glUniform3fv(bone_vertex_color_program->sun_color_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, 0.0f)));
+		glUniform3fv(bone_vertex_color_program->sun_direction_vec3, 1, glm::value_ptr(glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f))));
+		//use hemisphere light for sky light:
+		glUniform3fv(bone_vertex_color_program->sky_color_vec3, 1, glm::value_ptr(glm::vec3(0.9f, 0.9f, 0.95f)));
+		glUniform3fv(bone_vertex_color_program->sky_direction_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, 1.0f)));
+
+		glUseProgram(0);
+	}
 
 	scene.draw(*player.camera);
 
