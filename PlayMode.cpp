@@ -161,17 +161,28 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	}
 
 	// go through the meshes and find Cube objects. Convert to naming convention later
-	std::string str("o_");
+	std::string str_obstacle("o_");
+	std::string str_barrier("c_");
 	const auto& meshes = phonebank_meshes->meshes;
 	for (auto& mesh : meshes) {
 
-		if (mesh.first.find(str) != std::string::npos)
+		if (mesh.first.find(str_obstacle) != std::string::npos)
 		{
 			auto& min = mesh.second.min;
 			auto& max = mesh.second.max;
 			glm::vec3 center = 0.5f * (min + max);
 			glm::vec3 rad = 0.5f * (max - min);
 			obstacles.emplace_back(Collision::AABB(center, rad));
+		}
+		else if (mesh.first.find(str_barrier) != std::string::npos)
+		{
+			auto& min = mesh.second.min;
+			auto& max = mesh.second.max;
+			glm::vec3 center = 0.5f * (min + max);
+			glm::vec3 rad = 0.5f * (max - min);
+			Collision::AABB box = Collision::AABB(center, rad);
+			box.r.z = 100.0f; // set a big vertical barrier so you can never climb the obstacle
+			obstacles.emplace_back(box);
 		}
 	}
 
@@ -356,20 +367,25 @@ void PlayMode::update(float elapsed) {
 
 	//player walking:
 	{
-		// set player speed 
-		if (!(up.pressed || down.pressed || left.pressed || right.pressed || slide.pressed || jump.pressed)  ) // player is still
+
+		//combine inputs into a move:
+		glm::vec2 move = glm::vec2(0.0f);
+
+		// set player speeds
+		// if player is still reset to low speed multiplier
+		if (!(up.pressed || down.pressed || left.pressed || right.pressed || slide.pressed || jump.pressed)  )
 		{
 			speed_multiplier = low_speed; // don't start at 0 speed, this looks better
 		}
+		// use acceleration to set speed multiplier
 		else if (!sliding)
 		{
 			speed_multiplier = std::min(1.0f, speed_multiplier + accel*elapsed);
 		}
-		PlayerSpeed = PlayerSpeedMax * speed_multiplier; // overwritten later if sliding
-
-		//combine inputs into a move:
-		glm::vec2 move = glm::vec2(0.0f);
+		// set the speed itself
+		PlayerSpeed = PlayerSpeedMax * speed_multiplier;
 		
+		// start jump
 		if (jump.pressed && released) {
 			if (!in_air) {
 				released = false;
@@ -378,20 +394,23 @@ void PlayMode::update(float elapsed) {
 			}
 		}
 
+		// start slide, squish player dimension in z
 		if (slide.pressed && !sliding) {
 			sliding = true;
 			player.transform->scale.z = 0.6f * player_height_default;
 		}
 
+		// when sliding, bypass WASD command and only charge in the direction the player faces
 		if (sliding && !in_air) {
-			// when sliding, bypass WASD command and only charge in the direction the player faces
 			move.y = 1.0f;
 			speed_multiplier -= friction * elapsed;
 			speed_multiplier = std::max(low_speed, speed_multiplier);
 		}
+		// jumping ends sliding
 		else if (sliding && in_air) {
 			reset_sliding();
 		}
+		// regular WASD commands
 		else {
 			if (left.pressed && !right.pressed) move.x = -1.0f;
 			if (!left.pressed && right.pressed) move.x = 1.0f;
@@ -407,7 +426,7 @@ void PlayMode::update(float elapsed) {
 		glm::vec3 remain = player.transform->make_local_to_world() * glm::vec4(move.x, move.y, 0.0f, 0.0f);
 		glm::vec3 remain_copy = remain;
 
-		// WalkPoint before moving
+		// WalkPoint before moving, used to reset if collisions
 		WalkPoint before = player.at;
 
 		// step in walkmesh.
@@ -418,9 +437,10 @@ void PlayMode::update(float elapsed) {
 		glm::quat temp_rot;
 		step_in_3D(temp_pos, temp_rot);
 
-		// check for jumping
+		// jumping: 
 		if (in_air) {
 			if (!climbing) {
+				// cap fall speed
 				if (jump_up_velocity - gravity * elapsed < max_fall_speed) {
 					jump_up_velocity = max_fall_speed;
 				}
@@ -428,6 +448,7 @@ void PlayMode::update(float elapsed) {
 					jump_up_velocity -= gravity * elapsed;
 				}
 				z_relative += jump_up_velocity * elapsed;
+				// landing on the ground
 				if (z_relative <= 0.0f) {
 					z_relative = 0.0f;
 					jump_up_velocity = 0.0f;
@@ -448,7 +469,8 @@ void PlayMode::update(float elapsed) {
 				}
 			}
 		}
-
+		
+		// update position in z due to jumping (or not)
 		temp_pos.z = temp_pos.z + z_relative;
 
 		// check if the new position leads to a collision
@@ -457,12 +479,11 @@ void PlayMode::update(float elapsed) {
 		if (sliding) player_height = 0.15f;
 		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.45f,0.4f,player_height });
 		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
-
 		bool reset_pos = false;
 
-		// if we are climbing, we are essentially holding onto an obstacle and have no need to detect collision
-		if (!climbing) {
-			bool collision = false; // was there a collision update?
+		// collision checking
+		if (!climbing) { // if we are climbing, we are essentially holding onto an obstacle and have no need to detect collision
+			bool collision = false;
 			for (Collision::AABB& p : obstacles)
 			{	
 				int collision_x_or_y = Collision::testCollision(p, player_box);
@@ -516,15 +537,17 @@ void PlayMode::update(float elapsed) {
 					temp_pos.z = temp_pos.z + z_relative; 
 
 				}
-				if (on_platform && obstacle_box == &p && !Collision::testCollision(p, player_box)) {
-					in_air = true;
-					on_platform = false;
-					obstacle_box = nullptr;
+
+				// on platform but no collision with the obstacle, enable falling
+				if (on_platform && obstacle_box == &p && !Collision::testCollision(p, player_box) && (!sliding || !Collision::testCollisionXY(p, player_box)) ) {
+						in_air = true;
+						on_platform = false;
+						obstacle_box = nullptr;
 				}
 			}
 			if (!collision)
 			{
-				last_collision = 0; // if there was no collision, clear
+				last_collision = 0; // if there was no collision, clear variable (used for sliding motion)
 			}
 		} else {
 			if (Collision::testCollision(*obstacle_box, player_box)) {
