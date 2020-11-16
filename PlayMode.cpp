@@ -1,6 +1,7 @@
 #include "PlayMode.hpp"
 
 #include "LitColorTextureProgram.hpp"
+#include "ColorTextureProgram.hpp"
 
 #include "DrawLines.hpp"
 #include "Mesh.hpp"
@@ -14,6 +15,9 @@
 #include <random>
 
 GLuint phonebank_meshes_for_lit_color_texture_program = 0;
+GLuint vertex_buffer_for_color_texture_program = 0;
+GLuint vertex_buffer = 0;
+GLuint white_tex = 0;
 Load< MeshBuffer > phonebank_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 	MeshBuffer const *ret = new MeshBuffer(data_path("phone-bank.pnct"));
 	phonebank_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
@@ -59,6 +63,97 @@ void PlayMode::update_camera() {
 }
 
 PlayMode::PlayMode() : scene(*phonebank_scene) {
+	//----- allocate OpenGL resources -----
+	{ 
+		glGenBuffers(1, &vertex_buffer);
+		
+		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
+	}
+
+	{
+		//vertex array mapping buffer for color_texture_program:
+		//ask OpenGL to fill vertex_buffer_for_color_texture_program with the name of an unused vertex array object:
+		glGenVertexArrays(1, &vertex_buffer_for_color_texture_program);
+
+		//set vertex_buffer_for_color_texture_program as the current vertex array object:
+		glBindVertexArray(vertex_buffer_for_color_texture_program);
+
+		//set vertex_buffer as the source of glVertexAttribPointer() commands:
+		glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+
+		//set up the vertex array object to describe arrays of PongMode::Vertex:
+		glVertexAttribPointer(
+			color_texture_program->Position_vec4, //attribute
+			3, //size
+			GL_FLOAT, //type
+			GL_FALSE, //normalized
+			sizeof(Vertex), //stride
+			(GLbyte *)0 + 0 //offset
+		);
+		glEnableVertexAttribArray(color_texture_program->Position_vec4);
+		//[Note that it is okay to bind a vec3 input to a vec4 attribute -- the w component will be filled with 1.0 automatically]
+
+		glVertexAttribPointer(
+			color_texture_program->Color_vec4, //attribute
+			4, //size
+			GL_UNSIGNED_BYTE, //type
+			GL_TRUE, //normalized
+			sizeof(Vertex), //stride
+			(GLbyte *)0 + 4*3 //offset
+		);
+		glEnableVertexAttribArray(color_texture_program->Color_vec4);
+
+		glVertexAttribPointer(
+			color_texture_program->TexCoord_vec2, //attribute
+			2, //size
+			GL_FLOAT, //type
+			GL_FALSE, //normalized
+			sizeof(Vertex), //stride
+			(GLbyte *)0 + 4*3 + 4*1 //offset
+		);
+		glEnableVertexAttribArray(color_texture_program->TexCoord_vec2);
+
+		//done referring to vertex_buffer, so unbind it:
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		//done setting up vertex array object, so unbind it:
+		glBindVertexArray(0);
+
+		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
+	}
+
+	{ 
+		//solid white texture:
+		//ask OpenGL to fill white_tex with the name of an unused texture object:
+		glGenTextures(1, &white_tex);
+
+		//bind that texture object as a GL_TEXTURE_2D-type texture:
+		glBindTexture(GL_TEXTURE_2D, white_tex);
+
+		//upload a 1x1 image of solid white to the texture:
+		glm::uvec2 size = glm::uvec2(1,1);
+		std::vector< glm::u8vec4 > data(size.x*size.y, glm::u8vec4(0xff, 0xff, 0xff, 0xff));
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+
+		//set filtering and wrapping parameters:
+		//(it's a bit silly to mipmap a 1x1 texture, but I'm doing it because you may want to use this code to load different sizes of texture)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+		//since texture uses a mipmap and we haven't uploaded one, instruct opengl to make one for us:
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		//Okay, texture uploaded, can unbind it:
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
+	}
+
+
+
+
 	//create a player transform:
 	for (auto& transform : scene.transforms) {
 		if (transform.name == "Player") player.transform = &transform;
@@ -89,6 +184,23 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	// create some message objects. hardcoded for now
 	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
 	messages.emplace_back(std::make_pair(glm::vec3(-8.5f, -46.0f, 5.0f), "Hold left shift to crawl. Scroll mousewheel to zoom camera."));
+
+	// intialize the prologue introductory texts
+	prologue_messages.push_back("I'm a broke octopus. (Press Space to Continue)");
+	prologue_messages.push_back("I used to live in the depth of the ocean with my girlfriend...");
+	prologue_messages.push_back("Until I proposed to her...");
+	prologue_messages.push_back("I thought that was it. But one day, she was gone.");
+	prologue_messages.push_back("Left me a note that goes as below:");
+	prologue_messages.push_back("\"I need you to collect something for me.");
+	prologue_messages.push_back("\"I'm not an ordinary octopus.");
+	prologue_messages.push_back("\"OCEAN STARDUST, CONSCIENCE OF COAL, SEALED NARCISSUS, and HYDROSOI");
+	prologue_messages.push_back("\"These I will need to maintain the normal look of an octopus.");
+	prologue_messages.push_back("\"Sorry I've been lying to you all this time.");
+	prologue_messages.push_back("\"Will you do this for me?\"");
+	prologue_messages.push_back("I'm a BROKE octopus with none of the treasures she mentioned.");
+	prologue_messages.push_back("I paid visits to the sages. I inquired the sperm whale clairvoyant.");
+	prologue_messages.push_back("They all point me towards one answer...");
+	prologue_messages.push_back("Humans.");
 
 	//create a player camera attached to a child of the player transform:
 	scene.transforms.emplace_back();
@@ -146,7 +258,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_SPACE) {
-			jump.pressed = true;
+			if (prologue) {
+				prologue_message += 1;
+			} else {
+				jump.pressed = true;
+			}
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_LSHIFT) {
 			if (!slide.pressed) {
@@ -225,6 +341,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
+	if (prologue) {
+		if (prologue_message < prologue_messages.size()) return;
+		prologue = false;
+	}
+
 	//player walking:
 	{
 		// set player speed 
@@ -433,6 +554,13 @@ void PlayMode::update(float elapsed) {
 		} else {
 			shadow->position.z = shadow_base_height;
 		}
+
+		// see if bumped into an ingredient
+		for (Collision::AABB& p : ingredients) {
+			if (Collision::testCollision(p, player_box)) {
+				
+			}
+		}
 		
 		bool in_range = false;
 		// play a message depending on your position
@@ -500,7 +628,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 		std::string draw_str = "";// "Mouse motion looks; WASD moves; escape ungrabs mouse. "; // MODIFY THIS FOR ANY DEFAULT STRING
 		// print message string
-		if (idx_message != -1)
+		if (prologue) {
+			draw_str += prologue_messages[prologue_message];
+		} else if (idx_message != -1)
 		{
 			draw_str += messages[idx_message].second;
 		}
@@ -515,6 +645,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			glm::vec3(-aspect + 0.1f * H + ofs, -0.7 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+		draw_textbox(aspect,
+			glm::vec2(-aspect + 0.1f * H, -0.7 + 0.05f * H),
+			glm::vec2(draw_str.size() * H / 2.0f, 2.0f * H));
 	}
 	GL_ERRORS();
 }
@@ -583,4 +716,61 @@ void PlayMode::step_in_mesh(glm::vec3& remain)
 	if (remain != glm::vec3(0.0f)) {
 		std::cout << "NOTE: code used full iteration budget for walking." << std::endl;
 	}
+}
+
+void PlayMode::draw_textbox(float aspect, glm::vec2 center, glm::vec2 radius)
+{
+	glm::mat4 court_to_clip = glm::mat4(
+			1.0f / aspect, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+		);
+
+	std::vector< Vertex > vertices;
+
+	auto draw_rectangle = [&vertices](glm::vec2 const &center, glm::vec2 const &radius, glm::u8vec4 const &color) {
+		//draw rectangle as two CCW-oriented triangles:
+		vertices.emplace_back(glm::vec3(center.x-radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+		vertices.emplace_back(glm::vec3(center.x+radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+		vertices.emplace_back(glm::vec3(center.x+radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+
+		vertices.emplace_back(glm::vec3(center.x-radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+		vertices.emplace_back(glm::vec3(center.x+radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+		vertices.emplace_back(glm::vec3(center.x-radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	};
+
+	draw_rectangle(center, radius, glm::u8vec4(128,128,0,255));
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer); //set vertex_buffer as current
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_STREAM_DRAW); //upload vertices array
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//set color_texture_program as current program:
+	glUseProgram(color_texture_program->program);
+
+	//upload OBJECT_TO_CLIP to the proper uniform location:
+	glUniformMatrix4fv(color_texture_program->OBJECT_TO_CLIP_mat4, 1, GL_FALSE, glm::value_ptr(court_to_clip));
+
+	//use the mapping vertex_buffer_for_color_texture_program to fetch vertex data:
+	glBindVertexArray(vertex_buffer_for_color_texture_program);
+
+	//bind the solid white texture to location zero so things will be drawn just with their colors:
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, white_tex);
+
+	//run the OpenGL pipeline:
+	glDrawArrays(GL_TRIANGLES, 0, GLsizei(vertices.size()));
+
+	//unbind the solid white texture:
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	//reset vertex array to none:
+	glBindVertexArray(0);
+
+	//reset current program to none:
+	glUseProgram(0);
+	
+
+	GL_ERRORS(); //PARANOIA: print errors just in case we did something wrong.
 }

@@ -19,6 +19,7 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 	void step_in_3D(glm::vec3& pos, glm::quat& rot);
 	void step_in_mesh(glm::vec3& remain);
+	void draw_textbox(float aspect, glm::vec2& center, glm::vec2& radius);
 
 	void reset_sliding();
 
@@ -85,6 +86,15 @@ struct PlayMode : Mode {
 		// Player contains a bounding box
 
 	} player;
+
+	struct Vertex {
+		Vertex(glm::vec3 const &Position_, glm::u8vec4 const &Color_, glm::vec2 const &TexCoord_) :
+			Position(Position_), Color(Color_), TexCoord(TexCoord_) { }
+		glm::vec3 Position;
+		glm::u8vec4 Color;
+		glm::vec2 TexCoord;
+	};
+
 	Scene::Transform *shadow = nullptr;
 	float shadow_base_height;
 	float player_height_default;
@@ -95,5 +105,9 @@ struct PlayMode : Mode {
 	// coordinates of messages. 
 	std::vector<std::pair< glm::vec3, std::string>> messages;
 	int idx_message = -1; // keep an index of your location, so that you don't keep playing the same message over and over
+
+	bool prologue = true;
+	int prologue_message = 0;
+	std::vector<std::string> prologue_messages;
 
 };
