@@ -19,7 +19,8 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 	void step_in_3D(glm::vec3& pos, glm::quat& rot);
 	void step_in_mesh(glm::vec3& remain);
-	void draw_textbox(float aspect, glm::vec2 center, glm::vec2 radius);
+	void add_to_textbox(glm::vec2 center, glm::vec2 radius);
+	void draw_textbox(float aspect);
 
 	void reset_sliding();
 
@@ -104,10 +105,14 @@ struct PlayMode : Mode {
 
 	// coordinates of messages. 
 	std::vector<std::pair< glm::vec3, std::string>> messages;
+	std::vector<std::pair< glm::vec3, std::string>> objectives;
 	int idx_message = -1; // keep an index of your location, so that you don't keep playing the same message over and over
 
 	bool prologue = true;
 	int prologue_message = 0;
+	int cur_objective = 0;
 	std::vector<std::string> prologue_messages;
+
+	std::vector< Vertex > textbox;
 
 };

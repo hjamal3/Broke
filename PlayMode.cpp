@@ -202,6 +202,11 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	prologue_messages.push_back("They all point me towards one answer...");
 	prologue_messages.push_back("Humans.");
 
+	objectives.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Explore around!"));
+	objectives.emplace_back(std::make_pair(glm::vec3(-8.52156f, -46.2738f, 4.80875f), "Find a way into the restaurant."));
+	objectives.emplace_back(std::make_pair(glm::vec3(20.8374f, -40.9954f, 4.83061f), "Collect the treasures mentioned in Fiance's note."));
+	objectives.emplace_back(std::make_pair(glm::vec3(-14.7522f, -6.78037f, 0.0f), "Get out of the restaurant through the door!"));
+
 	//create a player camera attached to a child of the player transform:
 	scene.transforms.emplace_back();
 	scene.cameras.emplace_back(&scene.transforms.back());
@@ -268,6 +273,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			if (!slide.pressed) {
 				slide.pressed = true;
 			}
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_TAB) {
+			std::cout << player.transform->position.x << " " << player.transform->position.y << " " << player.transform->position.z << "\n";
 			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
@@ -575,6 +583,18 @@ void PlayMode::update(float elapsed) {
 		{
 			idx_message = -1;
 		}
+
+		// check if in range of something
+		if (cur_objective + 1 < (int) objectives.size() - 1) {
+			glm::vec3 diff = player.transform->position - objectives[cur_objective+1].first;
+			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 2.0f))
+			{
+				cur_objective++;
+			}
+		}
+		// else if (cur_objective + 1 == (int) objectives.size() - 1) {
+			// need to check whether all necessary treasures have been collected
+		// }
 	}
 
 	update_camera();
@@ -638,9 +658,36 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			glm::vec3(-aspect + 0.1f * H + ofs, -0.7 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
-		draw_textbox(aspect,
+		add_to_textbox(
 			glm::vec2(-aspect + 0.1f * H, -0.7 + 0.05f * H),
 			glm::vec2(draw_str.size() * H / 2.0f, 2.0f * H));
+
+		if (!prologue) {
+			// draw objectives
+			lines.draw_text("Objective:",
+				glm::vec3(-aspect + 0.1f * H, -0.7 + 17.0f * H, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+			float ofs = 2.0f / drawable_size.y;
+			lines.draw_text("Objective:",
+				glm::vec3(-aspect + 0.1f * H + ofs, -0.7 + 17.0f * H + ofs, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+			lines.draw_text(objectives[cur_objective].second,
+				glm::vec3(-aspect + 0.1f * H, -0.7 + 16.0f * H, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+			lines.draw_text(objectives[cur_objective].second,
+				glm::vec3(-aspect + 0.1f * H + ofs, -0.7 + 16.0f * H + ofs, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+			uint32_t max_len = objectives[cur_objective].second.size() > 9 ? objectives[cur_objective].second.size() : 9;
+			add_to_textbox(
+				glm::vec2(-aspect + 0.1f * H, -0.7 + 16.95f * H),
+				glm::vec2(max_len * H / 2.0f, 2.0f * H));
+		}
+
+		draw_textbox(aspect);
 	}
 	GL_ERRORS();
 }
@@ -711,29 +758,32 @@ void PlayMode::step_in_mesh(glm::vec3& remain)
 	}
 }
 
-void PlayMode::draw_textbox(float aspect, glm::vec2 center, glm::vec2 radius)
+void PlayMode::add_to_textbox(glm::vec2 center, glm::vec2 radius)
 {
+
+	auto color = glm::u8vec4(0,128,128,255);
+
+	textbox.emplace_back(glm::vec3(center.x-radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(center.x+radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(center.x+radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+
+	textbox.emplace_back(glm::vec3(center.x-radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(center.x+radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(center.x-radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+}
+
+void PlayMode::draw_textbox(float aspect)
+{
+
 	glm::mat4 court_to_clip = glm::mat4(
-			1.0f / aspect, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-		);
-
-	std::vector< Vertex > vertices;
-
-	auto color = glm::u8vec4(128,128,0,255);
-
-	vertices.emplace_back(glm::vec3(center.x-radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
-	vertices.emplace_back(glm::vec3(center.x+radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
-	vertices.emplace_back(glm::vec3(center.x+radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
-
-	vertices.emplace_back(glm::vec3(center.x-radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
-	vertices.emplace_back(glm::vec3(center.x+radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
-	vertices.emplace_back(glm::vec3(center.x-radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
+		1.0f / aspect, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer); //set vertex_buffer as current
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_STREAM_DRAW); //upload vertices array
+	glBufferData(GL_ARRAY_BUFFER, textbox.size() * sizeof(textbox[0]), textbox.data(), GL_STREAM_DRAW); //upload vertices array
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	//set color_texture_program as current program:
@@ -750,7 +800,7 @@ void PlayMode::draw_textbox(float aspect, glm::vec2 center, glm::vec2 radius)
 	glBindTexture(GL_TEXTURE_2D, white_tex);
 
 	//run the OpenGL pipeline:
-	glDrawArrays(GL_TRIANGLES, 0, GLsizei(vertices.size()));
+	glDrawArrays(GL_TRIANGLES, 0, GLsizei(textbox.size()));
 
 	//unbind the solid white texture:
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -763,4 +813,10 @@ void PlayMode::draw_textbox(float aspect, glm::vec2 center, glm::vec2 radius)
 	
 
 	GL_ERRORS(); //PARANOIA: print errors just in case we did something wrong.
+
+	uint32_t size = textbox.size();
+	while (size > 0) {
+		textbox.pop_back();
+		size--;
+	}
 }
