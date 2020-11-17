@@ -186,7 +186,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 			glm::vec3 center = 0.5f * (min + max);
 			glm::vec3 rad = 0.5f * (max - min);
 			Collision::AABB box = Collision::AABB(center, rad);
-			box.r.z = 100.0f; // set a big vertical barrier so you can never climb the obstacle
+			//box.r.z = 100.0f; // set a big vertical barrier so you can never climb the obstacle
 			obstacles.emplace_back(box);
 		}
 		else if (mesh.first.find(str_collectable) != std::string::npos)
@@ -209,6 +209,8 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	// create some message objects. hardcoded for now
 	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
 	messages.emplace_back(std::make_pair(glm::vec3(-8.5f, -46.0f, 5.0f), "Hold left shift to crawl. Scroll mousewheel to zoom camera."));
+	messages.emplace_back(std::make_pair(glm::vec3(-1.0f, -46.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
+	messages.emplace_back(std::make_pair(glm::vec3(7.0f, -47.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
 
 	// intialize the prologue introductory texts
 	prologue_messages.push_back("I'm a broke octopus./Press Space to Continue");
@@ -629,6 +631,9 @@ void PlayMode::update(float elapsed) {
 				cur_objective++;
 			}
 		}
+		else if (cur_objective == 2 && ingredients_collected == 15) {
+			cur_objective++;
+		}
 		// else if (cur_objective + 1 == (int) objectives.size() - 1) {
 			// need to check whether all necessary treasures have been collected
 		// }
@@ -643,6 +648,7 @@ void PlayMode::update(float elapsed) {
 				box.c.z = -100.0f;
 				Scene::Transform* transform = collectable_transforms.at(name);
 				transform->position.z = -100.0f;
+				ingredients_collected++;
 			}
 		}
 
@@ -716,26 +722,40 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		if (!prologue) {
 			// draw objectives
 			lines.draw_text("Objective:",
-				glm::vec3(-aspect + 0.1f * H, -0.7 + 17.0f * H, 0.0),
+				glm::vec3(-aspect + 0.1f * H, 0.95 - 1.1f * H, 0.0),
 				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 			float ofs = 2.0f / drawable_size.y;
 			lines.draw_text("Objective:",
-				glm::vec3(-aspect + 0.1f * H + ofs, -0.7 + 17.0f * H + ofs, 0.0),
+				glm::vec3(-aspect + 0.1f * H + ofs, 0.95 - 1.1f * H + ofs, 0.0),
 				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 			lines.draw_text(objectives[cur_objective].second,
-				glm::vec3(-aspect + 0.1f * H, -0.7 + 16.0f * H, 0.0),
+				glm::vec3(-aspect + 0.1f * H, 0.95 - 2.2f * H, 0.0),
 				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 			lines.draw_text(objectives[cur_objective].second,
-				glm::vec3(-aspect + 0.1f * H + ofs, -0.7 + 16.0f * H + ofs, 0.0),
+				glm::vec3(-aspect + 0.1f * H + ofs, 0.95 - 2.2f * H + ofs, 0.0),
 				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 			uint32_t max_len = objectives[cur_objective].second.size() > 9 ? (uint32_t)objectives[cur_objective].second.size() : 9;
 			add_to_textbox(
-				glm::vec2(-aspect + 0.1f * H, -0.7 + 16.95f * H),
-				glm::vec2(max_len * H / 2.0f, 2.0f * H));
+				glm::vec2(-aspect + 0.1f * H, 0.95 - 1.1f * H),
+				glm::vec2(max_len * H / 2.0f, 1.5f * H));
+
+			if (cur_objective == 2) {
+				lines.draw_text("Treasures: " + std::to_string(ingredients_collected) + "/15",
+					glm::vec3(-aspect + 0.1f * H, 0.7 - 1.1f * H, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+				lines.draw_text("Treasures: " + std::to_string(ingredients_collected) + "/15",
+					glm::vec3(-aspect + 0.1f * H + ofs, 0.7 - 1.1f * H + ofs, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+				add_to_textbox(
+					glm::vec2(-aspect + 0.1f * H, 0.7 - 1.1f * H),
+					glm::vec2(7.0f * H, 1.5f * H));
+			}
 		}
 
 		draw_textbox(aspect);

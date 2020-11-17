@@ -74,6 +74,9 @@ struct PlayMode : Mode {
 	float pitch = 0.25f;
 	glm::vec3 look_offset = glm::vec3(0.0f, 0.0f, 0.8f);
 
+	//game related states
+	int ingredients_collected = 0;
+
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
 

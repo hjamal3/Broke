@@ -1,8 +1,8 @@
-# (TODO: your game's title)
+# Broke
 
-Author: (TODO: your name)
+Author: Kyle Jannak-Huang, Xinyi Sun, Haidar Jamal
 
-Design: (TODO: In two sentences or fewer, describe what is new and interesting about your game.)
+Design: This is a platformer game in which you play as an octopus. You must search for your fiance, who left you with only a note.
 
 Screen Shot:
 
@@ -10,9 +10,13 @@ Screen Shot:
 
 How To Play:
 
-(TODO: describe the controls and (if needed) goals/strategy.)
+Controls:
 
-Sources: (TODO: list a source URL for any assets you did not create yourself. Make sure you have a license for the asset.)
+Move with WASD. Look/rotate with mouse motion. 
+Jump with space, crouch/slide with left shift. Climb onto ledges with space when mid-jump. 
+Zoom camera with scroll wheel.
+
+Sources: All the assets were made by us (so far). Most of the library code was written by Jim McMann.
 
 This game was built with [NEST](NEST.md).
 
