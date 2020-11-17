@@ -704,7 +704,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				glm::vec3(-aspect + 0.1f * H + ofs, -0.7 + 16.0f * H + ofs, 0.0),
 				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
-			uint32_t max_len = objectives[cur_objective].second.size() > 9 ? objectives[cur_objective].second.size() : 9;
+			uint32_t max_len = objectives[cur_objective].second.size() > 9 ? (uint32_t)objectives[cur_objective].second.size() : 9;
 			add_to_textbox(
 				glm::vec2(-aspect + 0.1f * H, -0.7 + 16.95f * H),
 				glm::vec2(max_len * H / 2.0f, 2.0f * H));
@@ -837,7 +837,7 @@ void PlayMode::draw_textbox(float aspect)
 
 	GL_ERRORS(); //PARANOIA: print errors just in case we did something wrong.
 
-	uint32_t size = textbox.size();
+	uint32_t size = (uint32_t)textbox.size();
 	while (size > 0) {
 		textbox.pop_back();
 		size--;
