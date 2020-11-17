@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <deque>
+#include <map>
 
 struct PlayMode : Mode {
 	PlayMode();
@@ -102,6 +103,8 @@ struct PlayMode : Mode {
 
 	// primitives info
 	std::vector<Collision::AABB> obstacles;
+	std::map<std::string, Scene::Transform*> collectable_transforms;
+	std::map<std::string, Collision::AABB> collectable_boxes;
 
 	// coordinates of messages. 
 	std::vector<std::pair< glm::vec3, std::string>> messages;

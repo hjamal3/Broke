@@ -151,13 +151,18 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
 	}
 
-
-
-
-	//create a player transform:
+	std::string str_collectable("i_");
+	//create transforms:
 	for (auto& transform : scene.transforms) {
+		// player transforms
 		if (transform.name == "Player") player.transform = &transform;
 		if (transform.name == "PlayerShadow") shadow = &transform;
+
+		// add collectable transforms 
+		if (transform.name.find(str_collectable) != std::string::npos)
+		{
+			collectable_transforms.insert(std::pair<std::string, Scene::Transform*>(transform.name, &transform));
+		}
 	}
 
 	// go through the meshes and find Cube objects. Convert to naming convention later
@@ -183,6 +188,15 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 			Collision::AABB box = Collision::AABB(center, rad);
 			box.r.z = 100.0f; // set a big vertical barrier so you can never climb the obstacle
 			obstacles.emplace_back(box);
+		}
+		else if (mesh.first.find(str_collectable) != std::string::npos)
+		{
+			auto& min = mesh.second.min;
+			auto& max = mesh.second.max;
+			glm::vec3 center = 0.5f * (min + max);
+			glm::vec3 rad = 0.5f * (max - min);
+			Collision::AABB box = Collision::AABB(center, rad);
+			collectable_boxes.insert(std::pair<std::string,Collision::AABB>(mesh.first, box));
 		}
 	}
 
@@ -618,6 +632,20 @@ void PlayMode::update(float elapsed) {
 		// else if (cur_objective + 1 == (int) objectives.size() - 1) {
 			// need to check whether all necessary treasures have been collected
 		// }
+
+		// collectables checking
+		for (auto it = collectable_boxes.begin(); it != collectable_boxes.end(); it++)
+		{
+			std::string name = it->first;  // string (key)
+			Collision::AABB & box = it->second;
+			if (Collision::testCollision(box, player_box))
+			{
+				box.c.z = -100.0f;
+				Scene::Transform* transform = collectable_transforms.at(name);
+				transform->position.z = -100.0f;
+			}
+		}
+
 	}
 
 	update_camera();
