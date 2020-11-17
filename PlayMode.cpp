@@ -408,6 +408,7 @@ void PlayMode::update(float elapsed) {
 				released = false;
 				in_air = true;
 				jump_up_velocity = jump_speed;
+				jump_first_time = true;
 			}
 		}
 
@@ -435,9 +436,40 @@ void PlayMode::update(float elapsed) {
 			if (!down.pressed && up.pressed) move.y = 1.0f;
 		}
 
+		// store current move for jumping
+		if (jump_first_time)
+		{
+			jump_first_time = false;
+			jumping = true;
+			jump_PlayerSpeed = PlayerSpeed;
+
+			if (move != glm::vec2(0.0f))
+			{
+				jump_move = move;
+			}
+			else
+			{
+				jump_move = glm::vec2(0.0f);
+			}
+		}
 
 		//make it so that moving diagonally doesn't go faster:
-		if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
+		if (move != glm::vec2(0.0f)) {
+			move = glm::normalize(move) * PlayerSpeed * elapsed;
+		}
+
+		// overrwrite if jumping
+		if (jumping)
+		{
+			if (jump_move != glm::vec2(0.0f))
+			{
+				move = glm::normalize(jump_move) * jump_PlayerSpeed * elapsed;
+			}
+			else
+			{
+				move = glm::vec2(0.0f);
+			}
+		}
 
 		//get move in world coordinate system:
 		glm::vec3 remain = player.transform->make_local_to_world() * glm::vec4(move.x, move.y, 0.0f, 0.0f);
@@ -471,6 +503,7 @@ void PlayMode::update(float elapsed) {
 					jump_up_velocity = 0.0f;
 					in_air = false;
 					on_platform = false;
+					jumping = false;
 				}
 			} else {
 				assert(obstacle_box != nullptr);
@@ -483,6 +516,7 @@ void PlayMode::update(float elapsed) {
 					on_platform = true;
 					in_air = false;
 					jump_up_velocity = 0.0f;
+					jumping = false;
 				}
 			}
 		}
@@ -516,13 +550,14 @@ void PlayMode::update(float elapsed) {
 							z_relative -= jump_up_velocity * elapsed;
 							jump_up_velocity = 0.0f;
 						}
-
+						// land on platform
 						if (jump_up_velocity < 0 && std::abs(z_relative - obstacle_height) < 0.4f) {
 							z_relative = obstacle_height;
 							jump_up_velocity = 0.0f;
 							in_air = false;
 							on_platform = true;
 							obstacle_box = &p;
+							jumping = false;
 						} else {
 							// Check for two things:
 							// - Player is sufficiently close to the edge of the platform vertically
@@ -532,6 +567,7 @@ void PlayMode::update(float elapsed) {
 									(obstacle_height - z_relative < 2.0f && jump.pressed && released) /* in-air climb */) {
 									climbing = true;
 									obstacle_box = &p;
+									jumping = false;
 								}
 							}
 						}
