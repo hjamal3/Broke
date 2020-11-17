@@ -54,12 +54,16 @@ struct PlayMode : Mode {
 	//float slide_velocity = 0.0f;
 
 	// player motion
-	const float PlayerSpeedMax = 35.0f;
+	const float PlayerSpeedMax = 30.0f;
 	float PlayerSpeed = 0;
 	float speed_multiplier = 0.0f; // 0 to 1
-	const float accel = 3.0f;
-	const float low_speed = 0.2f;
+	const float accel = 1.0f;
+	const float low_speed = 0.3f;
 	int last_collision = 0;
+	bool jump_first_time = false;
+	float jump_PlayerSpeed = 0.0f;
+	bool jumping = false;
+	glm::vec2 jump_move;
 
 	// climbing control
 	bool climbing = false;
