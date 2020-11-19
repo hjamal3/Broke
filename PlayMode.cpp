@@ -453,21 +453,39 @@ void PlayMode::update(float elapsed) {
 			}
 		}
 
-		//make it so that moving diagonally doesn't go faster:
-		if (move != glm::vec2(0.0f)) {
-			move = glm::normalize(move) * PlayerSpeed * elapsed;
+		// Setting motion speeds
+		if (!jumping)
+		{
+			//make it so that moving diagonally doesn't go faster:
+			if (move != glm::vec2(0.0f)) {
+				move = glm::normalize(move) * PlayerSpeed * elapsed;
+			}
 		}
-
-		// overrwrite if jumping
-		if (jumping)
+		else
 		{
 			if (jump_move != glm::vec2(0.0f))
 			{
-				move = glm::normalize(jump_move) * jump_PlayerSpeed * elapsed;
+				// if you are jumping and want to slow down
+				if (jump_move.y > 0 && jump_move.x == 0 && move.y < 0 && move.x == 0)
+				{
+					jump_PlayerSpeed -= 0.5f;
+				}
+				jump_move = glm::normalize( jump_move + move / 20.0f);
+				move = jump_move * jump_PlayerSpeed * elapsed;
 			}
 			else
 			{
-				move = glm::vec2(0.0f);
+				// if still, add a little bit of speed
+				if (move != glm::vec2(0.0f))
+				{
+					jump_move = glm::normalize(move);
+					jump_PlayerSpeed = PlayerSpeedMax / 5.0f;
+					move = jump_move * jump_PlayerSpeed * elapsed;
+				}
+				else
+				{
+					move = glm::vec2(0.0f);
+				}
 			}
 		}
 
