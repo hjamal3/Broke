@@ -479,7 +479,7 @@ void PlayMode::update(float elapsed) {
 				if (move != glm::vec2(0.0f))
 				{
 					jump_move = glm::normalize(move);
-					jump_PlayerSpeed = PlayerSpeedMax / 5.0f;
+					jump_PlayerSpeed = PlayerSpeedMax / 3.0f;
 					move = jump_move * jump_PlayerSpeed * elapsed;
 				}
 				else
