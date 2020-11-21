@@ -99,6 +99,7 @@ struct PlayMode : Mode {
 
 	//animation controls
 	std::vector< BoneAnimationPlayer > player_animations;
+	bool landed = false;
 
 	float jump_step = 0.0f;
 

@@ -133,7 +133,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 
 	for (auto& drawable : scene.drawables) {
 		if (drawable.transform->name == "Player.001") {
-			player_animations.emplace_back(*level1_banims, *player_anim_jump, BoneAnimationPlayer::Loop, 1.0f);
+			player_animations.emplace_back(*level1_banims, *player_anim_jump, BoneAnimationPlayer::Once);
 			player_animations.back().position = 0.0f;
 			drawable.pipeline.program = bone_vertex_color_program->program;
 			drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
@@ -150,24 +150,6 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 				anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
 			};
 		}
-		/*if (drawable.transform->name == "Plant") {
-			player_animations.emplace_back(*level1_banims, *plant_wind, BoneAnimationPlayer::Loop, 1.0f);
-			player_animations.back().position = 0.0f;
-			drawable.pipeline.program = bone_vertex_color_program->program;
-			drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
-			drawable.pipeline.type = level1_banims->mesh.type;
-			drawable.pipeline.start = level1_banims->mesh.start;
-			drawable.pipeline.count = level1_banims->mesh.count;
-			drawable.pipeline.OBJECT_TO_CLIP_mat4 = bone_vertex_color_program->object_to_clip_mat4;
-			//drawable.pipeline.OBJECT_TO_CLIP_mat4 = lit_color_texture_program_pipeline.OBJECT_TO_CLIP_mat4;
-			drawable.pipeline.OBJECT_TO_LIGHT_mat4x3 = bone_vertex_color_program->object_to_light_mat4x3;
-			drawable.pipeline.NORMAL_TO_LIGHT_mat3 = bone_vertex_color_program->normal_to_light_mat3;
-
-			BoneAnimationPlayer* anim_player = &player_animations.back();
-			drawable.pipeline.set_uniforms = [anim_player]() {
-				anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
-			};
-		}*/
 	}
 
 }
@@ -310,15 +292,11 @@ void PlayMode::update(float elapsed) {
 		}
 
 		// Update animation step
-		/*if (in_air) {
-			player_animations[0].position -= elapsed * 3.0f;
-			player_animations[0].position -= std::floor(player_animations[0].position);
-			if (player_animations[0].done()) {
-				player_animations[0].position = 1.0f;
-			}
-		}*/
-		std::cout << player_animations[0].position << std::endl;
-		if (player_animations[0].done()) {
+		if (in_air) {
+			player_animations[0].position += elapsed * 2.0f;
+			//player_animations[0].position += std::floor(player_animations[0].position);
+		} 
+		else if (player_animations[0].position > 0) {
 			player_animations[0].position = 0.0f;
 		}
 
@@ -556,7 +534,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		glUniform3fv(bone_vertex_color_program->sun_color_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, 0.0f)));
 		glUniform3fv(bone_vertex_color_program->sun_direction_vec3, 1, glm::value_ptr(glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f))));
 		//use hemisphere light for sky light:
-		glUniform3fv(bone_vertex_color_program->sky_color_vec3, 1, glm::value_ptr(glm::vec3(0.9f, 0.9f, 0.95f)));
+		glUniform3fv(bone_vertex_color_program->sky_color_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f, 1.0f)));
 		glUniform3fv(bone_vertex_color_program->sky_direction_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, 1.0f)));
 
 		glUseProgram(0);

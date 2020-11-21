@@ -85,7 +85,6 @@ bone_name_to_idx = dict()
 #write bind pose info for bone, return packed index:
 def write_bone(bone):
 	global bone_data
-	print("\t", bone)
 
 	if bone == None: return struct.pack('i', -1)
 	if bone.name in bone_name_to_idx: return bone_name_to_idx[bone.name]
@@ -96,6 +95,7 @@ def write_bone(bone):
 	#bind matrix inverse as 3-row, 4-column matrix:
 	transform = bone.matrix_local.copy()
 	transform.invert()
+
 	#Note: store *column-major*:
 	bone_data += struct.pack('3f', transform[0].x, transform[1].x, transform[2].x)
 	bone_data += struct.pack('3f', transform[0].y, transform[1].y, transform[2].y)
@@ -176,7 +176,6 @@ def write_action(action, name, offset_first=0, offset_last=0, relative='local'):
 
 #Write hierarchy, names, bind matrices for bones:
 for bone in armature.data.bones:
-	print("Calling write bone ", bone)
 	write_bone(bone)
 
 #Frames will be stored a blocks of transforms, in bone index order:
