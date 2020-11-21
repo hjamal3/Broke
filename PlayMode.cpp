@@ -53,12 +53,14 @@ Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const
 });
 
 BoneAnimation::Animation const* player_anim_jump = nullptr;
-//BoneAnimation::Animation const* plant_wind = nullptr;
+BoneAnimation::Animation const* player_anim_walk = nullptr;
+BoneAnimation::Animation const* player_anim_climb = nullptr;
 
 Load< BoneAnimation > level1_banims(LoadTagDefault, []() {
 	auto ret = new BoneAnimation(data_path("level1.banims"));
 	player_anim_jump = &(ret->lookup("Jump!local"));
-	//plant_wind = &(ret->lookup("Wind!local"));
+	player_anim_walk = &(ret->lookup("Walk!local"));
+	player_anim_climb = &(ret->lookup("Climb!local"));
 
 	return ret;
 });
@@ -274,12 +276,15 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 
 	player_height_default = player.transform->scale.z;
 
-	player_animations.reserve(2);
+	player_animations.reserve(3);
 
 	for (auto& drawable : scene.drawables) {
-		if (drawable.transform->name == "Player.001") {
+		if (drawable.transform->name == "Player") {
+			player_drawable = &drawable;
 			player_animations.emplace_back(*level1_banims, *player_anim_jump, BoneAnimationPlayer::Once);
 			player_animations.back().position = 0.0f;
+			player_animations.emplace_back(*level1_banims, *player_anim_walk, BoneAnimationPlayer::Once);
+			player_animations.back().position = 1.0f;
 			drawable.pipeline.program = bone_vertex_color_program->program;
 			drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
 			drawable.pipeline.type = level1_banims->mesh.type;
@@ -294,6 +299,8 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 			drawable.pipeline.set_uniforms = [anim_player]() {
 				anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
 			};
+
+			
 		}
 	}
 
@@ -305,8 +312,6 @@ PlayMode::~PlayMode() {
 void PlayMode::reset_sliding() {
 	slide.pressed = false;
 	sliding = false;
-	//slide_duration = slide_duration_reset;
-	//slide_velocity = 0.0f;
 	player.transform->scale.z = player_height_default;
 }
 
@@ -386,20 +391,13 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 			player.transform->rotation = glm::angleAxis(-motion.x * player.camera->fovy, up) * player.transform->rotation;
 
-			//camera_pitch += 1.5f * motion.y * player.camera->fovy;
 			yaw += -motion.x * player.camera->fovy;
 			if (yaw < -M_PI) yaw += 2.0f * float(M_PI);
 			if (yaw >= M_PI) yaw -= 2.0f * float(M_PI);
 
-			//float pitch = glm::pitch(player.camera->transform->rotation);
 			pitch -= motion.y * player.camera->fovy;
 			if (pitch < -M_PI / 2) pitch = float(-M_PI) / 2;
 			if (pitch > M_PI / 2) pitch = float(M_PI) / 2;
-			//camera looks down -z (basically at the player's feet) when pitch is at zero.
-			//pitch = std::min(pitch, 0.95f * 3.1415926f);
-			//pitch = std::max(pitch, 0.05f * 3.1415926f);
-			//player.camera->transform->rotation = glm::angleAxis(pitch, glm::vec3(1.0f, 0.0f, 0.0f));
-			//glm::mat4 view = glm::lookAt(player.camera->transform->position, player.transform->position, up);
 			update_camera();
 
 			return true;
@@ -424,26 +422,24 @@ void PlayMode::update(float elapsed) {
 		prologue = false;
 	}
 
-	//player walking:
 	{
-
 		//combine inputs into a move:
 		glm::vec2 move = glm::vec2(0.0f);
 
 		// set player speeds
 		// if player is still reset to low speed multiplier
-		if (!(up.pressed || down.pressed || left.pressed || right.pressed || slide.pressed || jump.pressed)  )
+		if (!(up.pressed || down.pressed || left.pressed || right.pressed || slide.pressed || jump.pressed))
 		{
 			speed_multiplier = low_speed; // don't start at 0 speed, this looks better
 		}
 		// use acceleration to set speed multiplier
 		else if (!sliding)
 		{
-			speed_multiplier = std::min(1.0f, speed_multiplier + accel*elapsed);
+			speed_multiplier = std::min(1.0f, speed_multiplier + accel * elapsed);
 		}
 		// set the speed itself
 		PlayerSpeed = PlayerSpeedMax * speed_multiplier;
-		
+
 		// start jump
 		if (jump.pressed && released) {
 			if (!in_air) {
@@ -452,15 +448,6 @@ void PlayMode::update(float elapsed) {
 				jump_up_velocity = jump_speed;
 				jump_first_time = true;
 			}
-		}
-
-		// Update animation step
-		if (in_air) {
-			player_animations[0].position += elapsed * 2.0f;
-			//player_animations[0].position += std::floor(player_animations[0].position);
-		} 
-		else if (player_animations[0].position > 0) {
-			player_animations[0].position = 0.0f;
 		}
 
 		// start slide, squish player dimension in z
@@ -485,6 +472,12 @@ void PlayMode::update(float elapsed) {
 			if (!left.pressed && right.pressed) move.x = 1.0f;
 			if (down.pressed && !up.pressed) move.y = -1.0f;
 			if (!down.pressed && up.pressed) move.y = 1.0f;
+			if (move == glm::vec2(0.0f)) {
+				player_state = STILL;
+			}
+			else {
+				player_state = WALK;
+			}
 		}
 
 		// store current move for jumping
@@ -521,7 +514,7 @@ void PlayMode::update(float elapsed) {
 				{
 					jump_PlayerSpeed -= 0.5f;
 				}
-				jump_move = glm::normalize( jump_move + move / 20.0f);
+				jump_move = glm::normalize(jump_move + move / 20.0f);
 				move = jump_move * jump_PlayerSpeed * elapsed;
 			}
 			else
@@ -574,7 +567,8 @@ void PlayMode::update(float elapsed) {
 					on_platform = false;
 					jumping = false;
 				}
-			} else {
+			}
+			else {
 				assert(obstacle_box != nullptr);
 				z_relative += elapsed * climb_speed;
 				float platform_height = obstacle_box->c.z + obstacle_box->r.z;
@@ -589,13 +583,13 @@ void PlayMode::update(float elapsed) {
 				}
 			}
 		}
-		
+
 		// update position in z due to jumping (or not)
 		temp_pos.z = temp_pos.z + z_relative;
 
 		// check if the new position leads to a collision
 		// create player bounding box
-		float player_height = 0.75f/2.0f;
+		float player_height = 0.75f / 2.0f;
 		if (sliding) player_height = 0.15f;
 		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.45f,0.4f,player_height });
 		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
@@ -605,7 +599,7 @@ void PlayMode::update(float elapsed) {
 		if (!climbing) { // if we are climbing, we are essentially holding onto an obstacle and have no need to detect collision
 			bool collision = false;
 			for (Collision::AABB& p : obstacles)
-			{	
+			{
 				int collision_x_or_y = Collision::testCollision(p, player_box);
 				if (collision_x_or_y && obstacle_box != &p)
 				{
@@ -627,7 +621,8 @@ void PlayMode::update(float elapsed) {
 							on_platform = true;
 							obstacle_box = &p;
 							jumping = false;
-						} else {
+						}
+						else {
 							// Check for two things:
 							// - Player is sufficiently close to the edge of the platform vertically
 							// - Jump key has been released from the previous press
@@ -656,28 +651,29 @@ void PlayMode::update(float elapsed) {
 					}
 					step_in_mesh(remain);
 					step_in_3D(temp_pos, temp_rot);
-					temp_pos.z = temp_pos.z + z_relative; 
+					temp_pos.z = temp_pos.z + z_relative;
 
 				}
 
 				// on platform but no collision with the obstacle, enable falling
-				if (on_platform && obstacle_box == &p && !Collision::testCollision(p, player_box) && (!sliding || !Collision::testCollisionXY(p, player_box)) ) {
-						in_air = true;
-						on_platform = false;
-						obstacle_box = nullptr;
+				if (on_platform && obstacle_box == &p && !Collision::testCollision(p, player_box) && (!sliding || !Collision::testCollisionXY(p, player_box))) {
+					in_air = true;
+					on_platform = false;
+					obstacle_box = nullptr;
 				}
 			}
 			if (!collision)
 			{
 				last_collision = 0; // if there was no collision, clear variable (used for sliding motion)
 			}
-		} else {
+		}
+		else {
 			if (Collision::testCollision(*obstacle_box, player_box)) {
 				player.at = before;
 				reset_pos = true;
 			}
 		}
-		
+
 		// there was no collision, update player's transform
 		if (!reset_pos) {
 			player.transform->position = temp_pos;
@@ -690,12 +686,13 @@ void PlayMode::update(float elapsed) {
 		// set shadow pos
 		shadow->position.x = player.transform->position.x;
 		shadow->position.y = player.transform->position.y;
-		Collision::AABB *tmp = nullptr;
+		Collision::AABB* tmp = nullptr;
 		for (Collision::AABB& p : obstacles) {
 			if (Collision::testCollisionXYStrict(p, player_box) && p.r.z + p.c.z <= player.transform->position.z) {
 				if (tmp == nullptr) {
 					tmp = &p;
-				} else {
+				}
+				else {
 					if (p.r.z + p.c.z >= tmp->c.z + tmp->r.z) {
 						tmp = &p;
 					}
@@ -704,10 +701,11 @@ void PlayMode::update(float elapsed) {
 		}
 		if (tmp != nullptr) {
 			shadow->position.z = tmp->c.z + tmp->r.z + shadow_base_height;
-		} else {
+		}
+		else {
 			shadow->position.z = shadow_base_height;
 		}
-		
+
 		bool in_range = false;
 		// play a message depending on your position
 		for (int i = 0; i < (int)messages.size(); i++)
@@ -730,8 +728,8 @@ void PlayMode::update(float elapsed) {
 		}
 
 		// check if in range of something
-		if (cur_objective + 1 < (int) objectives.size() - 1) {
-			glm::vec3 diff = player.transform->position - objectives[cur_objective+1].first;
+		if (cur_objective + 1 < (int)objectives.size() - 1) {
+			glm::vec3 diff = player.transform->position - objectives[cur_objective + 1].first;
 			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 2.0f))
 			{
 				cur_objective++;
@@ -748,7 +746,7 @@ void PlayMode::update(float elapsed) {
 		for (auto it = collectable_boxes.begin(); it != collectable_boxes.end(); it++)
 		{
 			std::string name = it->first;  // string (key)
-			Collision::AABB & box = it->second;
+			Collision::AABB& box = it->second;
 			if (Collision::testCollision(box, player_box))
 			{
 				box.c.z = -100.0f;
@@ -757,14 +755,38 @@ void PlayMode::update(float elapsed) {
 				ingredients_collected++;
 			}
 		}
-
 	}
 
 	update_camera();
 
-	for (auto& anim : player_animations) {
-		anim.update(elapsed);
+	// Update animation steps
+	if (jumping == true) {
+		player_state = JUMP;
+		player_animations[0].position += elapsed;
 	}
+	else {
+		if (player_animations[0].position > 0) player_animations[0].position = 0.0f;
+	}
+	if (!in_air && player_state == WALK) {
+			//player_animations[1].position = 0.0f;
+			player_animations[1].position_per_second = PlayerSpeed / 3.0f;
+			if (player_animations[1].position >= 1.0f) {
+				player_animations[1].position = 0.0f;
+			}
+	}
+
+	BoneAnimationPlayer* anim_player = &player_animations[1];
+	if (player_state == JUMP) {
+		player_animations[0].update(elapsed);
+		anim_player = &player_animations[0];
+	}
+	if (player_state == WALK || player_state == STILL) {
+		player_animations[1].update(elapsed);
+		anim_player = &player_animations[1];
+	}
+	player_drawable->pipeline.set_uniforms = [anim_player]() {
+		anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
+	};
 
 	//reset button press counters:
 	left.downs = 0;

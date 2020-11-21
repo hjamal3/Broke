@@ -19,4 +19,4 @@ $(DIST)/level1.w : level1.blend export-walkmeshes.py
     $(BLENDER) --background --python export-walkmeshes.py -- "level1.blend:WalkMeshes" "$(DIST)/level1.w" 
 
 $(DIST)/level1.banims : level1.blend export-animation.py
-    $(BLENDER) --background --python export-animation.py -- "level1.blend" "PlayerRig" "[0,29]Jump" "$(DIST)/level1.banims" 
+    $(BLENDER) --background --python export-animation.py -- "level1.blend" "PlayerRig" "[0,29]Jump;[50,69]Walk;[80,94]Climb" "$(DIST)/level1.banims" 

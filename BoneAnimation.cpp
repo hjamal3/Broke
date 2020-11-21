@@ -155,16 +155,12 @@ GLuint BoneAnimation::make_vao_for_program(GLuint program) const {
 	auto bind_attribute = [&](char const* name, MeshBuffer::Attrib const& attrib) {
 		if (attrib.size == 0) return; //don't bind empty attribs
 		GLint location = glGetAttribLocation(program, name);
-		std::cout << name << " : " << location << std::endl;
-		GL_ERRORS();
 		if (location == -1) return;
 		
 		if (attrib.type == GL_UNSIGNED_INT) {
-			std::printf("Binding int\n");
 			glVertexAttribIPointer(location, attrib.size, attrib.type, attrib.stride, (GLbyte*)0 + attrib.offset);
 		}
 		else {
-			std::printf("Binding float\n");
 			glVertexAttribPointer(location, attrib.size, attrib.type, attrib.normalized, attrib.stride, (GLbyte*)0 + attrib.offset);
 		}
 		glEnableVertexAttribArray(location);

@@ -49,13 +49,10 @@ struct PlayMode : Mode {
 
 	// slide control
 	bool sliding = false;
-	//float slide_duration = 1.2f;
-	//float slide_duration_reset = 1.2f;
 	float friction = 1.5f;
-	//float slide_velocity = 0.0f;
 
 	// player motion
-	const float PlayerSpeedMax = 12.0f;
+	const float PlayerSpeedMax = 9.0f;
 	float PlayerSpeed = 0;
 	float speed_multiplier = 0.0f; // 0 to 1
 	const float accel = 2.0f;
@@ -121,7 +118,10 @@ struct PlayMode : Mode {
 
 	//animation controls
 	std::vector< BoneAnimationPlayer > player_animations;
+	Scene::Drawable* player_drawable = nullptr;
 	bool landed = false;
+	enum Player_State {PAUSED, STILL, WALK, JUMP, SLIDE, CLIMB};
+	Player_State player_state = PAUSED;
 
 	bool prologue = true;
 	int prologue_message = 0;
