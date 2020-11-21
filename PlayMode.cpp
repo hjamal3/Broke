@@ -285,6 +285,8 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 			player_animations.back().position = 0.0f;
 			player_animations.emplace_back(*level1_banims, *player_anim_walk, BoneAnimationPlayer::Once);
 			player_animations.back().position = 1.0f;
+			player_animations.emplace_back(*level1_banims, *player_anim_climb, BoneAnimationPlayer::Once);
+			player_animations.back().position = 0.0f;
 			drawable.pipeline.program = bone_vertex_color_program->program;
 			drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
 			drawable.pipeline.type = level1_banims->mesh.type;
@@ -767,6 +769,15 @@ void PlayMode::update(float elapsed) {
 	else {
 		if (player_animations[0].position > 0) player_animations[0].position = 0.0f;
 	}
+
+	if (climbing == true) {
+		player_state = CLIMB;
+		player_animations[2].position += elapsed;
+	}
+	else {
+		if (player_animations[2].position > 0) player_animations[2].position = 0.0f;
+	}
+
 	if (!in_air && player_state == WALK) {
 			//player_animations[1].position = 0.0f;
 			player_animations[1].position_per_second = PlayerSpeed / 3.0f;
@@ -780,9 +791,13 @@ void PlayMode::update(float elapsed) {
 		player_animations[0].update(elapsed);
 		anim_player = &player_animations[0];
 	}
-	if (player_state == WALK || player_state == STILL) {
+	else if (player_state == WALK || player_state == STILL) {
 		player_animations[1].update(elapsed);
 		anim_player = &player_animations[1];
+	}
+	else if (player_state == CLIMB) {
+		player_animations[2].update(elapsed);
+		anim_player = &player_animations[2];
 	}
 	player_drawable->pipeline.set_uniforms = [anim_player]() {
 		anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);

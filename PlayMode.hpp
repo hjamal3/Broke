@@ -65,7 +65,7 @@ struct PlayMode : Mode {
 
 	// climbing control
 	bool climbing = false;
-	float climb_speed = 10.0f;
+	float climb_speed = 4.0f;
 
 	// camera control
 	void update_camera();
