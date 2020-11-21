@@ -106,8 +106,8 @@ GAME_NAMES =
 	main
 	LitColorTextureProgram
 	bone_vertex_color_program
-	#ColorTextureProgram #not used right now, but you might want it
 	BoneAnimation
+	ColorTextureProgram #not used right now, but you might want it
 	Sound
 	load_wav
 	load_opus

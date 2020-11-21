@@ -15,7 +15,6 @@ int Collision::testAABBAABB(const AABB& a, const AABB& b)
 	// did the player collide more on the x side or the y side?
 	// if b.c.x is contained between sides x1 x2 of a -> collision in y
 	// if b.c.y is contained between sides y1 y2 of a -> collision in x
-
 	float dist_x = std::min(abs((a.c.x + a.r.x) - (b.c.x - b.r.x)), abs((a.c.x - a.r.x) - (b.c.x + b.r.x)));
 	float dist_y = std::min(abs((a.c.y + a.r.y) - (b.c.y - b.r.y)), abs((a.c.y - a.r.y) - (b.c.y + b.r.y)));
 	// collision in x
@@ -23,21 +22,11 @@ int Collision::testAABBAABB(const AABB& a, const AABB& b)
 	{
 		return 1;
 	}
-
 	// collision in y
 	else
 	{
 		return 2;
 	}
-
-	//if (b.c.x > a.c.x - a.r.x && b.c.x < a.c.x + a.r.x)
-	//{
-	//	return 2; // collision in y
-	//}
-	//else if (b.c.y > a.c.y - a.r.y && b.c.y < a.c.y + a.r.y)
-	//{
-	//	return 1;
-	//}
 }
 
 bool Collision::testAABBAABBXY(const AABB& a, const AABB& b)

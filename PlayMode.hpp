@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <deque>
+#include <map>
 
 struct PlayMode : Mode {
 	PlayMode();
@@ -20,6 +21,8 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 	void step_in_3D(glm::vec3& pos, glm::quat& rot);
 	void step_in_mesh(glm::vec3& remain);
+	void add_to_textbox(glm::vec2 center, glm::vec2 radius);
+	void draw_textbox(float aspect);
 
 	void reset_sliding();
 
@@ -58,6 +61,10 @@ struct PlayMode : Mode {
 	const float accel = 2.0f;
 	const float low_speed = 0.2f;
 	int last_collision = 0;
+	bool jump_first_time = false;
+	float jump_PlayerSpeed = 0.0f;
+	bool jumping = false;
+	glm::vec2 jump_move;
 
 	// climbing control
 	bool climbing = false;
@@ -71,6 +78,9 @@ struct PlayMode : Mode {
 	float yaw = -float(M_PI)/2.0f;
 	float pitch = 0.25f;
 	glm::vec3 look_offset = glm::vec3(0.0f, 0.0f, 0.8f);
+
+	//game related states
+	int ingredients_collected = 0;
 
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
@@ -86,21 +96,38 @@ struct PlayMode : Mode {
 		// Player contains a bounding box
 
 	} player;
+
+	struct Vertex {
+		Vertex(glm::vec3 const &Position_, glm::u8vec4 const &Color_, glm::vec2 const &TexCoord_) :
+			Position(Position_), Color(Color_), TexCoord(TexCoord_) { }
+		glm::vec3 Position;
+		glm::u8vec4 Color;
+		glm::vec2 TexCoord;
+	};
+
 	Scene::Transform *shadow = nullptr;
 	float shadow_base_height;
 	float player_height_default;
 
 	// primitives info
 	std::vector<Collision::AABB> obstacles;
+	std::map<std::string, Scene::Transform*> collectable_transforms;
+	std::map<std::string, Collision::AABB> collectable_boxes;
 
 	// coordinates of messages. 
 	std::vector<std::pair< glm::vec3, std::string>> messages;
+	std::vector<std::pair< glm::vec3, std::string>> objectives;
 	int idx_message = -1; // keep an index of your location, so that you don't keep playing the same message over and over
 
 	//animation controls
 	std::vector< BoneAnimationPlayer > player_animations;
 	bool landed = false;
 
-	float jump_step = 0.0f;
+	bool prologue = true;
+	int prologue_message = 0;
+	int cur_objective = 0;
+	std::vector<std::string> prologue_messages;
+
+	std::vector< Vertex > textbox;
 
 };
