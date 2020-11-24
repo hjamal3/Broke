@@ -384,7 +384,6 @@ void PlayMode::update(float elapsed) {
 
 	//player walking:
 	{
-
 		//combine inputs into a move:
 		glm::vec2 move = glm::vec2(0.0f);
 
@@ -395,7 +394,7 @@ void PlayMode::update(float elapsed) {
 			speed_multiplier = low_speed; // don't start at 0 speed, this looks better
 		}
 		// use acceleration to set speed multiplier
-		else if (!sliding)
+		else if (!sliding && !in_air)
 		{
 			speed_multiplier = std::min(1.0f, speed_multiplier + accel*elapsed);
 		}
@@ -436,13 +435,12 @@ void PlayMode::update(float elapsed) {
 			if (!down.pressed && up.pressed) move.y = 1.0f;
 		}
 
-		// store current move for jumping
+		// store current move for jumping if first time jumping
 		if (jump_first_time)
 		{
 			jump_first_time = false;
 			jumping = true;
 			jump_PlayerSpeed = PlayerSpeed;
-
 			if (move != glm::vec2(0.0f))
 			{
 				jump_move = move;
