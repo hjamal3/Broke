@@ -75,6 +75,8 @@ struct PlayMode : Mode {
 	float yaw = -float(M_PI)/2.0f;
 	float pitch = 0.25f;
 	glm::vec3 look_offset = glm::vec3(0.0f, 0.0f, 0.8f);
+	void interpolate_views(int view1, int view2, float time);
+	enum views {PLAYER, SHARK_TANK, START_ROOM1, START_ROOM2, HALLWAY, DINING_ROOM, KITCHEN};
 
 	//game related states
 	int ingredients_collected = 0;
@@ -129,5 +131,8 @@ struct PlayMode : Mode {
 	std::vector<std::string> prologue_messages;
 
 	std::vector< Vertex > textbox;
+
+	std::vector<std::pair<glm::vec3, glm::vec3>> cut_scenes;
+	int in_cut_scene = 0;
 
 };

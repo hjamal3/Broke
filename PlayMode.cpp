@@ -71,16 +71,25 @@ Load< GLuint > level1_banims_for_bone_vertex_color_program(LoadTagDefault, []() 
 
 
 void PlayMode::update_camera() {
-	player.camera->transform->position.x = std::cos(yaw) * camera_dist + player.transform->position.x;
-	player.camera->transform->position.y = std::sin(yaw) * camera_dist + player.transform->position.y;
-	player.camera->transform->position.z = std::sin(pitch) * camera_dist + player.transform->position.z + look_offset.z;
+	if (!in_cut_scene)
+	{
+		player.camera->transform->position.x = std::cos(yaw) * camera_dist + player.transform->position.x;
+		player.camera->transform->position.y = std::sin(yaw) * camera_dist + player.transform->position.y;
+		player.camera->transform->position.z = std::sin(pitch) * camera_dist + player.transform->position.z + look_offset.z;
 
-	glm::vec3 up = walkmesh->to_world_smooth_normal(player.at);
-	glm::mat4x3 frame = player.camera->transform->make_local_to_world();
-	glm::vec3 pos = frame[3];
+		glm::vec3 up = walkmesh->to_world_smooth_normal(player.at);
+		glm::mat4x3 frame = player.camera->transform->make_local_to_world();
+		glm::vec3 pos = frame[3];
+		glm::mat4 view = glm::lookAt(pos, player.transform->position + look_offset, up);
+		player.camera->transform->rotation = glm::conjugate(glm::quat_cast(view));
+	}
+	else
+	{
+		glm::mat4 view = glm::lookAt(cut_scenes[in_cut_scene].first, cut_scenes[in_cut_scene].second, glm::vec3(0, 0, 1));
+		player.camera->transform->rotation = glm::conjugate(glm::quat_cast(view));
+		player.camera->transform->position = cut_scenes[in_cut_scene].first;
 
-	glm::mat4 view = glm::lookAt(pos, player.transform->position + look_offset, up);
-	player.camera->transform->rotation = glm::conjugate(glm::quat_cast(view));
+	}
 }
 
 PlayMode::PlayMode() : scene(*phonebank_scene) {
@@ -256,6 +265,15 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	objectives.emplace_back(std::make_pair(glm::vec3(20.8374f, -40.9954f, 4.83061f), "Collect the treasures mentioned in Fiance's note."));
 	objectives.emplace_back(std::make_pair(glm::vec3(-14.7522f, -6.78037f, 0.0f), "Get out of the restaurant through the door!"));
 
+	// camera position, target position
+	cut_scenes.resize(10);
+	cut_scenes[views::SHARK_TANK] = std::make_pair(glm::vec3(-12.0f, -35.0, 10.0f), glm::vec3(-16, -29, 3.0f));
+	cut_scenes[views::START_ROOM1] = std::make_pair(glm::vec3(-9.0f, -27.0, 12.0f), glm::vec3(-18, -40, 0.0f));
+	cut_scenes[views::START_ROOM2] = std::make_pair(glm::vec3(-23.0f, -49.0, 6.0f), glm::vec3(-13, -36, 0.0f));
+	cut_scenes[views::DINING_ROOM] = std::make_pair(glm::vec3(-4.6f, -40.0, 16.0f), glm::vec3(11.26f, -26.0f, 2.90f));
+	cut_scenes[views::HALLWAY] = std::make_pair(glm::vec3(27.0f, -48.0f, 11.0f), glm::vec3(-4.2f, -48.0f, 0.0f));
+	cut_scenes[views::KITCHEN] = std::make_pair(glm::vec3(23.0f, -18.0f, 15.0f), glm::vec3(-6.0f, -25.0f, 6.0f));
+
 	//create a player camera attached to a child of the player transform:
 	scene.transforms.emplace_back();
 	scene.cameras.emplace_back(&scene.transforms.back());
@@ -338,6 +356,19 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		} else if (evt.key.keysym.sym == SDLK_s) {
 			down.downs += 1;
 			down.pressed = true;
+			return true;
+		}
+		else if (evt.key.keysym.sym == SDLK_t) {
+			
+			// to iterate through the cut scenes
+			//in_cut_scene++;
+			//in_cut_scene %= cut_scenes.size()+1;
+			
+			// to set the current scene:
+			in_cut_scene = views::KITCHEN; // see PlayMode.hpp for other definitions.
+			// to go back to the player
+			in_cut_scene = views::PLAYER;
+
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_SPACE) {
 			if (prologue) {
@@ -757,7 +788,6 @@ void PlayMode::update(float elapsed) {
 			}
 		}
 	}
-
 	update_camera();
 
 	// Update animation steps
