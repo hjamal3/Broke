@@ -4,6 +4,7 @@
 #include "WalkMesh.hpp"
 #include "Collision.hpp"
 #include "BoneAnimation.hpp"
+#include "Sound.hpp"
 
 #include <glm/glm.hpp>
 
@@ -66,6 +67,7 @@ struct PlayMode : Mode {
 	// climbing control
 	bool climbing = false;
 	float climb_speed = 4.0f;
+	bool can_climb = false;
 
 	// camera control
 	void update_camera();
@@ -134,5 +136,7 @@ struct PlayMode : Mode {
 
 	std::vector<std::pair<glm::vec3, glm::vec3>> cut_scenes;
 	int in_cut_scene = 0;
-
+	// Sounds
+	std::shared_ptr< Sound::PlayingSample > jump_sound;
+	std::shared_ptr< Sound::PlayingSample > land_sound;
 };

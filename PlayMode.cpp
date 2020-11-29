@@ -69,6 +69,14 @@ Load< GLuint > level1_banims_for_bone_vertex_color_program(LoadTagDefault, []() 
 	return new GLuint(level1_banims->make_vao_for_program(bone_vertex_color_program->program));
 });
 
+Load< Sound::Sample > jump_sample(LoadTagDefault, []() -> Sound::Sample const* {
+	return new Sound::Sample(data_path("wet_sound_1.wav"));
+});
+
+Load< Sound::Sample > land_sample(LoadTagDefault, []() -> Sound::Sample const* {
+	return new Sound::Sample(data_path("wet_sound_2.wav"));
+});
+
 
 void PlayMode::update_camera() {
 	if (!in_cut_scene)
@@ -480,6 +488,7 @@ void PlayMode::update(float elapsed) {
 				in_air = true;
 				jump_up_velocity = jump_speed;
 				jump_first_time = true;
+				jump_sound = Sound::play(*jump_sample, 1.0f);
 			}
 		}
 
@@ -598,6 +607,7 @@ void PlayMode::update(float elapsed) {
 					in_air = false;
 					on_platform = false;
 					jumping = false;
+					land_sound = Sound::play(*land_sample, 1.0f);
 				}
 			}
 			else {
@@ -630,6 +640,7 @@ void PlayMode::update(float elapsed) {
 		// collision checking
 		if (!climbing) { // if we are climbing, we are essentially holding onto an obstacle and have no need to detect collision
 			bool collision = false;
+			can_climb = false;
 			for (Collision::AABB& p : obstacles)
 			{
 				int collision_x_or_y = Collision::testCollision(p, player_box);
@@ -653,6 +664,7 @@ void PlayMode::update(float elapsed) {
 							on_platform = true;
 							obstacle_box = &p;
 							jumping = false;
+							land_sound = Sound::play(*land_sample, 1.0f);
 						}
 						else {
 							// Check for two things:
@@ -660,10 +672,15 @@ void PlayMode::update(float elapsed) {
 							// - Jump key has been released from the previous press
 							if (z_relative < obstacle_height) {
 								if (obstacle_height - z_relative < 0.5f || /* on-ground climb */
-									(obstacle_height - z_relative < 2.0f && jump.pressed && released) /* in-air climb */) {
-									climbing = true;
-									obstacle_box = &p;
-									jumping = false;
+									obstacle_height - z_relative < 2.0f) { /* in-air climb */
+									if (jump.pressed && released) {
+										climbing = true;
+										obstacle_box = &p;
+										jumping = false;
+									}
+									else {
+										can_climb = true;
+									}
 								}
 							}
 						}
@@ -945,6 +962,17 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				add_to_textbox(
 					glm::vec2(-aspect + 0.1f * H, 0.7 - 1.1f * H),
 					glm::vec2(7.0f * H, 1.5f * H));
+			}
+
+			if (can_climb) {
+				lines.draw_text("Press space, hold forward to climb",
+					glm::vec3(-0.45, -0.4 - 1.1f * H, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+				lines.draw_text("Press space, hold forward to climb",
+					glm::vec3(-0.45 + ofs, -0.4 - 1.1f * H + ofs, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 			}
 		}
 

@@ -16,7 +16,8 @@ Move with WASD. Look/rotate with mouse motion.
 Jump with space, crouch/slide with left shift. Climb onto ledges with space when mid-jump. 
 Zoom camera with scroll wheel.
 
-Sources: All the assets were made by us (so far). Most of the library code was written by Jim McMann.
+Sources: All the visual assets were made by us (so far). Most of the library code was written by Jim McMann.
+The jumping and landing sounds were sampled from https://freesound.org/people/kyles/sounds/450830/ under the creative commons 0 license.
 
 This game was built with [NEST](NEST.md).
 
