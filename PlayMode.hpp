@@ -4,6 +4,7 @@
 #include "WalkMesh.hpp"
 #include "Collision.hpp"
 #include "BoneAnimation.hpp"
+#include "Sound.hpp"
 
 #include <glm/glm.hpp>
 
@@ -130,5 +131,9 @@ struct PlayMode : Mode {
 	std::vector<std::string> prologue_messages;
 
 	std::vector< Vertex > textbox;
+
+	// Sounds
+	std::shared_ptr< Sound::PlayingSample > jump_sound;
+	std::shared_ptr< Sound::PlayingSample > land_sound;
 
 };

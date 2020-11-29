@@ -69,6 +69,14 @@ Load< GLuint > level1_banims_for_bone_vertex_color_program(LoadTagDefault, []() 
 	return new GLuint(level1_banims->make_vao_for_program(bone_vertex_color_program->program));
 });
 
+Load< Sound::Sample > jump_sample(LoadTagDefault, []() -> Sound::Sample const* {
+	return new Sound::Sample(data_path("wet_sound_1.wav"));
+});
+
+Load< Sound::Sample > land_sample(LoadTagDefault, []() -> Sound::Sample const* {
+	return new Sound::Sample(data_path("wet_sound_2.wav"));
+});
+
 
 void PlayMode::update_camera() {
 	player.camera->transform->position.x = std::cos(yaw) * camera_dist + player.transform->position.x;
@@ -449,6 +457,7 @@ void PlayMode::update(float elapsed) {
 				in_air = true;
 				jump_up_velocity = jump_speed;
 				jump_first_time = true;
+				jump_sound = Sound::play(*jump_sample, 1.0f);
 			}
 		}
 
@@ -567,6 +576,7 @@ void PlayMode::update(float elapsed) {
 					in_air = false;
 					on_platform = false;
 					jumping = false;
+					land_sound = Sound::play(*land_sample, 1.0f);
 				}
 			}
 			else {
@@ -623,6 +633,7 @@ void PlayMode::update(float elapsed) {
 							on_platform = true;
 							obstacle_box = &p;
 							jumping = false;
+							land_sound = Sound::play(*land_sample, 1.0f);
 						}
 						else {
 							// Check for two things:
