@@ -474,7 +474,7 @@ void PlayMode::update(float elapsed) {
 	} 
 	else if (game_state == CUTSCENE)
 	{
-		if (view_scene == cut_scenes.size())
+		if (view_scene == (int) cut_scenes.size())
 		{
 			view_scene = views::PLAYER;
 			game_state = PLAY;
