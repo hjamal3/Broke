@@ -303,6 +303,7 @@ PlayMode::PlayMode() {
 	objectives.emplace_back(std::make_pair(glm::vec3(-8.52156f, -46.2738f, 4.80875f), "Find a way into the restaurant."));
 	objectives.emplace_back(std::make_pair(glm::vec3(20.8374f, -40.9954f, 4.83061f), "Collect the treasures mentioned in Fiance's note."));
 	objectives.emplace_back(std::make_pair(glm::vec3(-14.7522f, -6.78037f, 0.0f), "Get out of the restaurant through the door!"));
+	objectives.emplace_back(std::make_pair(glm::vec3(-14.211f, -6.77151f, 0.0f)), "PARKOUR YOUR WAY FROM THE SHARK!!!");
 
 	// camera position, target position
 	//cut_scenes.reserve(10);
@@ -397,19 +398,24 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.pressed = true;
 			return true;
 		}
-		// else if (evt.key.keysym.sym == SDLK_t) {
+		else if (evt.key.keysym.sym == SDLK_t) {
 			
-		// 	// to iterate through the cut scenes
-		// 	//view_scene++;
-		// 	//view_scene %= cut_scenes.size()+1;
+			// to iterate through the cut scenes
+			//view_scene++;
+			//view_scene %= cut_scenes.size()+1;
 			
-		// 	// to set the current scene:
-		// 	//view_scene = views::KITCHEN; // see PlayMode.hpp for other definitions.
-		// 	//// to go back to the player
-		// 	//view_scene = views::PLAYER;
-		// 	game_state = SHARKSCENE;
-		// 	return true;
-		// }
+			// to set the current scene:
+			//view_scene = views::KITCHEN; // see PlayMode.hpp for other definitions.
+			//// to go back to the player
+			//view_scene = views::PLAYER;
+			// game_state = SHARKSCENE;
+			// if (walkmesh == walkmesh_chase1) {
+			// 	switch_scene((Scene &) *phonebank_scene, (MeshBuffer &) *phonebank_meshes, walkmesh_tutorial_level1);
+			// } else {
+			// 	switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
+			// }
+			return true;
+		}
 		else if (evt.key.keysym.sym == SDLK_SPACE) {
 			if (game_state == PROLOGUE) {
 				prologue_message += 1;
@@ -531,6 +537,7 @@ void PlayMode::update(float elapsed) {
 			game_state = PLAY;
 			cinematic = false;
 			cinematic_edge_width = 0.0f;
+			chasing = true;
 			switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
 		}
 	}
@@ -571,7 +578,7 @@ void PlayMode::update(float elapsed) {
 			player.transform->scale.z = 0.6f * player_height_default;
 			// hardcoded door position to play shark scene
 			if (cur_objective == 3) {
-				glm::vec3 diff = player.transform->position - glm::vec3(-14.211, -6.77151, 0);
+				glm::vec3 diff = player.transform->position - glm::vec3(-14.211f, -6.77151f, 0.0f);
 				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f) {
 					game_state = SHARKSCENE;
 					cinematic = true;
@@ -952,7 +959,11 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f, 0.95f)));
 	glUseProgram(0);
 
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	if (!chasing) {
+		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	} else {
+		glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
+	}
 	glClearDepth(1.0f); //1.0 is actually the default value to clear the depth buffer to, but FYI you can change it.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1226,6 +1237,21 @@ void PlayMode::add_cinematic_edges(float x, float y) {
 }
 
 void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh const * cur_walkmesh) {
+	// reset operations
+	obstacle_box = nullptr;
+	platform_box = nullptr;
+	player.transform = nullptr;
+	player.camera = nullptr;
+	shadow = nullptr;
+	obstacles.clear();
+	collectable_transforms.clear();
+	collectable_boxes.clear();
+	player_animations.clear();
+	player_drawable = nullptr;
+	pitch = 0.25;
+	yaw = -float(M_PI)/2.0f;
+	z_relative = 0.0f;
+
 	scene = cur_scene;
 	std::string str_collectable("i_");
 	//create transforms:

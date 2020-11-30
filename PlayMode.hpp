@@ -94,6 +94,7 @@ struct PlayMode : Mode {
 	WalkMesh const * walkmesh = nullptr;
 	// when cutscenes are loaded
 	bool cinematic = false;
+	bool chasing = false;
 	float cinematic_edge_width = 0.0f;
 
 	//player info:
@@ -140,7 +141,7 @@ struct PlayMode : Mode {
 	enum Action_State { a_PAUSED, a_GROUND, a_JUMPING, a_PLATFORM, a_SLIDING, a_LAUNCHING, a_IN_AIR, a_CLIMBING};
 	Action_State action_state = a_GROUND;
 
-	enum Game_State {PROLOGUE, PLAY, CUTSCENE,SHARKSCENE};
+	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, PARKOUR};
 	Game_State game_state = PROLOGUE;
 
 	bool prologue = true;
