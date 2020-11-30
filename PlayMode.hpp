@@ -127,6 +127,12 @@ struct PlayMode : Mode {
 	enum Player_State {PAUSED, STILL, WALK, JUMP, SLIDE, CLIMB};
 	Player_State player_state = PAUSED;
 
+	enum Action_State { a_PAUSED, a_GROUND, a_JUMPING, a_PLATFORM, a_SLIDING, a_LAUNCHING, a_IN_AIR, a_CLIMBING};
+	Action_State action_state = a_GROUND;
+
+	enum Game_State {PROLOGUE, PLAY, CUTSCENE,SHARKSCENE};
+	Game_State game_state = PROLOGUE;
+
 	bool prologue = true;
 	int prologue_message = 0;
 	int cur_objective = 0;
@@ -134,9 +140,15 @@ struct PlayMode : Mode {
 
 	std::vector< Vertex > textbox;
 
-	std::vector<std::pair<glm::vec3, glm::vec3>> cut_scenes;
-	int in_cut_scene = 0;
+	std::map<int,std::pair<glm::vec3, glm::vec3>> cut_scenes;
+	int view_scene = 0;
+
 	// Sounds
 	std::shared_ptr< Sound::PlayingSample > jump_sound;
 	std::shared_ptr< Sound::PlayingSample > land_sound;
+
+	// shark variables
+	Scene::Transform* shark = nullptr;
+	float shark_timer = 0;
+
 };

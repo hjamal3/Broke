@@ -79,7 +79,7 @@ Load< Sound::Sample > land_sample(LoadTagDefault, []() -> Sound::Sample const* {
 
 
 void PlayMode::update_camera() {
-	if (!in_cut_scene)
+	if (!view_scene)
 	{
 		player.camera->transform->position.x = std::cos(yaw) * camera_dist + player.transform->position.x;
 		player.camera->transform->position.y = std::sin(yaw) * camera_dist + player.transform->position.y;
@@ -93,9 +93,9 @@ void PlayMode::update_camera() {
 	}
 	else
 	{
-		glm::mat4 view = glm::lookAt(cut_scenes[in_cut_scene].first, cut_scenes[in_cut_scene].second, glm::vec3(0, 0, 1));
+		glm::mat4 view = glm::lookAt(cut_scenes[view_scene].first, cut_scenes[view_scene].second, glm::vec3(0, 0, 1));
 		player.camera->transform->rotation = glm::conjugate(glm::quat_cast(view));
-		player.camera->transform->position = cut_scenes[in_cut_scene].first;
+		player.camera->transform->position = cut_scenes[view_scene].first;
 
 	}
 }
@@ -195,6 +195,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	// player transforms
 		if (transform.name == "PlayerRig") player.transform = &transform;
 		if (transform.name == "PlayerShadow") shadow = &transform;
+		if (transform.name == "Shark") shark = &transform;
 
 		// add collectable transforms 
 		if (transform.name.find(str_collectable) != std::string::npos)
@@ -203,7 +204,13 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 		}
 	}
 
-	// go through the meshes and find Cube objects. Convert to naming convention later
+	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
+	if (shadow == nullptr) throw std::runtime_error("GameObject not found.");
+	if (shark == nullptr) throw std::runtime_error("GameObject not found.");
+	shadow->position = glm::vec3(player.transform->position.x, player.transform->position.y, shadow->position.z);
+	shadow_base_height = shadow->position.z;
+
+	// go through the meshes and find obstacles.
 	std::string str_obstacle("o_");
 	std::string str_barrier("c_");
 	const auto& meshes = phonebank_meshes->meshes;
@@ -238,12 +245,6 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 		}
 	}
 
-	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
-	if (shadow == nullptr) throw std::runtime_error("GameObject not found.");
-
-	shadow->position = glm::vec3(player.transform->position.x, player.transform->position.y, shadow->position.z);
-	shadow_base_height = shadow->position.z;
-
 	// create some message objects. hardcoded for now
 	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
 	messages.emplace_back(std::make_pair(glm::vec3(-8.5f, -46.0f, 5.0f), "Hold left shift to crawl. Scroll mousewheel to zoom camera."));
@@ -274,13 +275,13 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	objectives.emplace_back(std::make_pair(glm::vec3(-14.7522f, -6.78037f, 0.0f), "Get out of the restaurant through the door!"));
 
 	// camera position, target position
-	cut_scenes.resize(10);
-	cut_scenes[views::SHARK_TANK] = std::make_pair(glm::vec3(-12.0f, -35.0, 10.0f), glm::vec3(-16, -29, 3.0f));
-	cut_scenes[views::START_ROOM1] = std::make_pair(glm::vec3(-9.0f, -27.0, 12.0f), glm::vec3(-18, -40, 0.0f));
-	cut_scenes[views::START_ROOM2] = std::make_pair(glm::vec3(-23.0f, -49.0, 6.0f), glm::vec3(-13, -36, 0.0f));
-	cut_scenes[views::DINING_ROOM] = std::make_pair(glm::vec3(-4.6f, -40.0, 16.0f), glm::vec3(11.26f, -26.0f, 2.90f));
-	cut_scenes[views::HALLWAY] = std::make_pair(glm::vec3(27.0f, -48.0f, 11.0f), glm::vec3(-4.2f, -48.0f, 0.0f));
-	cut_scenes[views::KITCHEN] = std::make_pair(glm::vec3(23.0f, -18.0f, 15.0f), glm::vec3(-6.0f, -25.0f, 6.0f));
+	//cut_scenes.reserve(10);
+	cut_scenes.insert(std::make_pair(views::SHARK_TANK,std::make_pair(glm::vec3(-12.0f, -35.0, 10.0f), glm::vec3(-16, -29, 3.0f))));
+	cut_scenes.insert(std::make_pair(views::START_ROOM1, std::make_pair(glm::vec3(-9.0f, -27.0, 12.0f), glm::vec3(-18, -40, 0.0f))));
+	cut_scenes.insert(std::make_pair(views::START_ROOM2, std::make_pair(glm::vec3(-23.0f, -49.0, 6.0f), glm::vec3(-13, -36, 0.0f))));
+	cut_scenes.insert(std::make_pair(views::DINING_ROOM, std::make_pair(glm::vec3(-4.6f, -40.0, 16.0f), glm::vec3(11.26f, -26.0f, 2.90f))));
+	cut_scenes.insert(std::make_pair(views::HALLWAY, std::make_pair(glm::vec3(27.0f, -48.0f, 11.0f), glm::vec3(-4.2f, -48.0f, 0.0f))));
+	cut_scenes.insert(std::make_pair(views::KITCHEN, std::make_pair(glm::vec3(23.0f, -18.0f, 15.0f), glm::vec3(-6.0f, -25.0f, 6.0f))));
 
 	//create a player camera attached to a child of the player transform:
 	scene.transforms.emplace_back();
@@ -369,19 +370,26 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		else if (evt.key.keysym.sym == SDLK_t) {
 			
 			// to iterate through the cut scenes
-			//in_cut_scene++;
-			//in_cut_scene %= cut_scenes.size()+1;
+			//view_scene++;
+			//view_scene %= cut_scenes.size()+1;
 			
 			// to set the current scene:
-			in_cut_scene = views::KITCHEN; // see PlayMode.hpp for other definitions.
-			// to go back to the player
-			in_cut_scene = views::PLAYER;
-
+			//view_scene = views::KITCHEN; // see PlayMode.hpp for other definitions.
+			//// to go back to the player
+			//view_scene = views::PLAYER;
+			game_state = SHARKSCENE;
 			return true;
-		} else if (evt.key.keysym.sym == SDLK_SPACE) {
-			if (prologue) {
+		}
+		else if (evt.key.keysym.sym == SDLK_SPACE) {
+			if (game_state == PROLOGUE) {
 				prologue_message += 1;
-			} else {
+
+			}
+			else if (game_state == CUTSCENE)
+			{
+				view_scene += 1;
+			}
+			else {
 				jump.pressed = true;
 			}
 			return true;
@@ -458,12 +466,39 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
-	if (prologue) {
-		if (((uint32_t) prologue_message) < prologue_messages.size()) return;
-		prologue = false;
-	}
 
+	if (game_state == PROLOGUE) {
+		if (((uint32_t) prologue_message) < prologue_messages.size()) return;
+		game_state = CUTSCENE;
+		view_scene = 1;
+	} 
+	else if (game_state == CUTSCENE)
 	{
+		if (view_scene == (int) cut_scenes.size())
+		{
+			view_scene = views::PLAYER;
+			game_state = PLAY;
+		}
+	}
+	else if (game_state == SHARKSCENE)
+	{
+		shark_timer += elapsed;
+		if (shark_timer < 3.5f)
+		{
+			shark->position.z += elapsed;
+		}
+		view_scene = views::SHARK_TANK;
+
+		// add a second delay for dramatic effect
+		if (shark_timer > 4.5f)
+		{
+			view_scene = views::PLAYER;
+			game_state = PLAY;
+		}
+	}
+	else if (game_state == PLAY)
+	{
+
 		//combine inputs into a move:
 		glm::vec2 move = glm::vec2(0.0f);
 
@@ -804,56 +839,57 @@ void PlayMode::update(float elapsed) {
 				ingredients_collected++;
 			}
 		}
-	}
-	update_camera();
+		// Update animation steps
+		if (jumping == true) {
+			player_state = JUMP;
+			player_animations[0].position += elapsed;
+		}
+		else {
+			if (player_animations[0].position > 0) player_animations[0].position = 0.0f;
+		}
 
-	// Update animation steps
-	if (jumping == true) {
-		player_state = JUMP;
-		player_animations[0].position += elapsed;
-	}
-	else {
-		if (player_animations[0].position > 0) player_animations[0].position = 0.0f;
-	}
+		if (climbing == true) {
+			player_state = CLIMB;
+			player_animations[2].position += elapsed;
+		}
+		else {
+			if (player_animations[2].position > 0) player_animations[2].position = 0.0f;
+		}
 
-	if (climbing == true) {
-		player_state = CLIMB;
-		player_animations[2].position += elapsed;
-	}
-	else {
-		if (player_animations[2].position > 0) player_animations[2].position = 0.0f;
-	}
-
-	if (!in_air && player_state == WALK) {
+		if (!in_air && player_state == WALK) {
 			//player_animations[1].position = 0.0f;
 			player_animations[1].position_per_second = PlayerSpeed / 3.0f;
 			if (player_animations[1].position >= 1.0f) {
 				player_animations[1].position = 0.0f;
 			}
+		}
+
+		BoneAnimationPlayer* anim_player = &player_animations[1];
+		if (player_state == JUMP) {
+			player_animations[0].update(elapsed);
+			anim_player = &player_animations[0];
+		}
+		else if (player_state == WALK || player_state == STILL) {
+			player_animations[1].update(elapsed);
+			anim_player = &player_animations[1];
+		}
+		else if (player_state == CLIMB) {
+			player_animations[2].update(elapsed);
+			anim_player = &player_animations[2];
+		}
+		player_drawable->pipeline.set_uniforms = [anim_player]() {
+			anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
+		};
+
+		//reset button press counters:
+		left.downs = 0;
+		right.downs = 0;
+		up.downs = 0;
+		down.downs = 0;
 	}
 
-	BoneAnimationPlayer* anim_player = &player_animations[1];
-	if (player_state == JUMP) {
-		player_animations[0].update(elapsed);
-		anim_player = &player_animations[0];
-	}
-	else if (player_state == WALK || player_state == STILL) {
-		player_animations[1].update(elapsed);
-		anim_player = &player_animations[1];
-	}
-	else if (player_state == CLIMB) {
-		player_animations[2].update(elapsed);
-		anim_player = &player_animations[2];
-	}
-	player_drawable->pipeline.set_uniforms = [anim_player]() {
-		anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
-	};
+	update_camera();
 
-	//reset button press counters:
-	left.downs = 0;
-	right.downs = 0;
-	up.downs = 0;
-	down.downs = 0;
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
@@ -905,9 +941,14 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 		std::string draw_str = "";// "Mouse motion looks; WASD moves; escape ungrabs mouse. "; // MODIFY THIS FOR ANY DEFAULT STRING
 		// print message string
-		if (prologue) {
+		if (game_state == PROLOGUE) {
 			draw_str += prologue_messages[prologue_message];
-		} else if (idx_message != -1)
+		}
+		else if (game_state == CUTSCENE)
+		{
+			draw_str += "Press space to explore the map!";
+		}
+		else if (idx_message != -1)
 		{
 			draw_str += messages[idx_message].second;
 		}
@@ -926,7 +967,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			glm::vec2(-aspect + 0.1f * H, -0.7 + 0.05f * H),
 			glm::vec2(draw_str.size() * H / 2.0f, 2.0f * H));
 
-		if (!prologue) {
+		if (!(game_state == PROLOGUE)) {
 			// draw objectives
 			lines.draw_text("Objective:",
 				glm::vec3(-aspect + 0.1f * H, 0.95 - 1.1f * H, 0.0),
