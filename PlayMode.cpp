@@ -74,11 +74,11 @@ Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const
 	walkmesh_tutorial_level1 = &ret->lookup("WalkMesh");
 	return ret;
 });
-// Load< WalkMeshes > chase1_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
-// 	WalkMeshes *ret = new WalkMeshes(data_path("chase1.w"));
-// 	walkmesh_chase1 = &ret->lookup(".001");
-// 	return ret;
-// });
+Load< WalkMeshes > chase1_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
+	WalkMeshes *ret = new WalkMeshes(data_path("chase1_test.w"));
+	walkmesh_chase1 = &ret->lookup("WalkMesh.001");
+	return ret;
+});
 
 BoneAnimation::Animation const* player_anim_jump = nullptr;
 BoneAnimation::Animation const* player_anim_walk = nullptr;
@@ -397,19 +397,19 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.pressed = true;
 			return true;
 		}
-		else if (evt.key.keysym.sym == SDLK_t) {
+		// else if (evt.key.keysym.sym == SDLK_t) {
 			
-			// to iterate through the cut scenes
-			//view_scene++;
-			//view_scene %= cut_scenes.size()+1;
+		// 	// to iterate through the cut scenes
+		// 	//view_scene++;
+		// 	//view_scene %= cut_scenes.size()+1;
 			
-			// to set the current scene:
-			//view_scene = views::KITCHEN; // see PlayMode.hpp for other definitions.
-			//// to go back to the player
-			//view_scene = views::PLAYER;
-			game_state = SHARKSCENE;
-			return true;
-		}
+		// 	// to set the current scene:
+		// 	//view_scene = views::KITCHEN; // see PlayMode.hpp for other definitions.
+		// 	//// to go back to the player
+		// 	//view_scene = views::PLAYER;
+		// 	game_state = SHARKSCENE;
+		// 	return true;
+		// }
 		else if (evt.key.keysym.sym == SDLK_SPACE) {
 			if (game_state == PROLOGUE) {
 				prologue_message += 1;
@@ -513,17 +513,25 @@ void PlayMode::update(float elapsed) {
 	else if (game_state == SHARKSCENE)
 	{
 		shark_timer += elapsed;
-		if (shark_timer < 3.5f)
+		
+		if (shark_timer < 1.0f) {
+			cinematic_edge_width += elapsed;
+		}
+
+		if (shark_timer < 4.5f && shark_timer > 1.0f)
 		{
 			shark->position.z += elapsed;
 		}
 		view_scene = views::SHARK_TANK;
 
 		// add a second delay for dramatic effect
-		if (shark_timer > 4.5f)
+		if (shark_timer > 5.5f)
 		{
 			view_scene = views::PLAYER;
 			game_state = PLAY;
+			cinematic = false;
+			cinematic_edge_width = 0.0f;
+			switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
 		}
 	}
 	else if (game_state == PLAY)
@@ -561,6 +569,15 @@ void PlayMode::update(float elapsed) {
 		if (slide.pressed && !sliding) {
 			sliding = true;
 			player.transform->scale.z = 0.6f * player_height_default;
+			// hardcoded door position to play shark scene
+			if (cur_objective == 3) {
+				glm::vec3 diff = player.transform->position - glm::vec3(-14.211, -6.77151, 0);
+				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f) {
+					game_state = SHARKSCENE;
+					cinematic = true;
+					return;
+				}
+			}
 		}
 
 		// when sliding, bypass WASD command and only charge in the direction the player faces
@@ -923,6 +940,7 @@ void PlayMode::update(float elapsed) {
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
+
 	//update camera aspect ratio for drawable:
 	player.camera->aspect = float(drawable_size.x) / float(drawable_size.y);
 
@@ -960,7 +978,13 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 	{ //use DrawLines to overlay some text:
 		glDisable(GL_DEPTH_TEST);
+
 		float aspect = float(drawable_size.x) / float(drawable_size.y);
+		if (cinematic) {
+			add_cinematic_edges(float(drawable_size.x), float(drawable_size.y));
+			draw_textbox(aspect);
+			return;
+		}
 		DrawLines lines(glm::mat4(
 			1.0f / aspect, 0.0f, 0.0f, 0.0f,
 			0.0f, 1.0f, 0.0f, 0.0f,
@@ -1181,6 +1205,26 @@ void PlayMode::draw_textbox(float aspect)
 	}
 }
 
+void PlayMode::add_cinematic_edges(float x, float y) {
+	auto color = glm::u8vec4(0,0,0,255);
+
+	textbox.emplace_back(glm::vec3(-x, 1.0f - cinematic_edge_width * 0.2f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(x, 1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(-x, 1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+
+	textbox.emplace_back(glm::vec3(-x, 1.0f - cinematic_edge_width * 0.2f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(x, 1.0f - cinematic_edge_width * 0.2f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(x, 1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+
+	textbox.emplace_back(glm::vec3(-x, -1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(x, -1.0f + cinematic_edge_width * 0.2f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(-x, -1.0f + cinematic_edge_width * 0.2f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+
+	textbox.emplace_back(glm::vec3(-x, -1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(x, -1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(x, -1.0f + cinematic_edge_width * 0.2f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+}
+
 void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh const * cur_walkmesh) {
 	scene = cur_scene;
 	std::string str_collectable("i_");
@@ -1283,6 +1327,5 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 			
 		}
 	}
-
 
 }

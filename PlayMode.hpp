@@ -20,11 +20,14 @@ struct PlayMode : Mode {
 	virtual bool handle_event(SDL_Event const &, glm::uvec2 const &window_size) override;
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
-	void switch_scene(Scene& scene, MeshBuffer& mesh, WalkMesh const * walkmesh);
 	void step_in_3D(glm::vec3& pos, glm::quat& rot);
 	void step_in_mesh(glm::vec3& remain);
 	void add_to_textbox(glm::vec2 center, glm::vec2 radius);
 	void draw_textbox(float aspect);
+	void add_cinematic_edges(float x, float y);
+
+	// scene switching function that changes from one level to another
+	void switch_scene(Scene& scene, MeshBuffer& mesh, WalkMesh const * walkmesh);
 
 	void reset_sliding();
 
@@ -84,8 +87,14 @@ struct PlayMode : Mode {
 	//game related states
 	int ingredients_collected = 0;
 
-	//local copy of the game scene (so code can change it during gameplay):
+	// The following two variables are updated in switch_scene when the necessasity comes up
+	// local copy of the game scene (so code can change it during gameplay)
 	Scene scene;
+	// current walkmesh based on game progress
+	WalkMesh const * walkmesh = nullptr;
+	// when cutscenes are loaded
+	bool cinematic = false;
+	float cinematic_edge_width = 0.0f;
 
 	//player info:
 	struct Player {
@@ -151,8 +160,4 @@ struct PlayMode : Mode {
 	// shark variables
 	Scene::Transform* shark = nullptr;
 	float shark_timer = 0;
-
-	// game progression
-	WalkMesh const * walkmesh = nullptr;
-
 };
