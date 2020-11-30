@@ -19,12 +19,18 @@
 #include <random>
 
 GLuint phonebank_meshes_for_lit_color_texture_program = 0;
+GLuint chase1_meshes_for_lit_color_texture_program = 0;
 GLuint vertex_buffer_for_color_texture_program = 0;
 GLuint vertex_buffer = 0;
 GLuint white_tex = 0;
 Load< MeshBuffer > phonebank_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 	MeshBuffer const *ret = new MeshBuffer(data_path("level1.pnct"));
 	phonebank_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+});
+Load< MeshBuffer > chase1_meshes(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("chase1_test.pnct"));
+	chase1_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
@@ -44,13 +50,35 @@ Load< Scene > phonebank_scene(LoadTagDefault, []() -> Scene const * {
 
 	});
 });
+Load< Scene > chase1_scene(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("chase1_test.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = chase1_meshes->lookup(mesh_name);
 
-WalkMesh const *walkmesh = nullptr;
+		scene.drawables.emplace_back(transform);
+		Scene::Drawable &drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = chase1_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+
+	});
+});
+
+WalkMesh const *walkmesh_tutorial_level1 = nullptr;
+WalkMesh const *walkmesh_chase1 = nullptr;
 Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
 	WalkMeshes *ret = new WalkMeshes(data_path("level1.w"));
-	walkmesh = &ret->lookup("WalkMesh");
+	walkmesh_tutorial_level1 = &ret->lookup("WalkMesh");
 	return ret;
 });
+// Load< WalkMeshes > chase1_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
+// 	WalkMeshes *ret = new WalkMeshes(data_path("chase1.w"));
+// 	walkmesh_chase1 = &ret->lookup(".001");
+// 	return ret;
+// });
 
 BoneAnimation::Animation const* player_anim_jump = nullptr;
 BoneAnimation::Animation const* player_anim_walk = nullptr;
@@ -100,7 +128,7 @@ void PlayMode::update_camera() {
 	}
 }
 
-PlayMode::PlayMode() : scene(*phonebank_scene) {
+PlayMode::PlayMode() {
 	//----- allocate OpenGL resources -----
 	{ 
 		glGenBuffers(1, &vertex_buffer);
@@ -189,7 +217,9 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
 	}
 
-	std::string str_collectable("i_");
+	switch_scene((Scene &) *phonebank_scene, (MeshBuffer &) *phonebank_meshes, walkmesh_tutorial_level1);
+
+	/*std::string str_collectable("i_");
 	//create transforms:
 	for (auto& transform : scene.transforms) {
 	// player transforms
@@ -243,7 +273,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 			Collision::AABB box = Collision::AABB(center, rad);
 			collectable_boxes.insert(std::pair<std::string,Collision::AABB>(mesh.first, box));
 		}
-	}
+	}*/
 
 	// create some message objects. hardcoded for now
 	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
@@ -284,7 +314,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	cut_scenes.insert(std::make_pair(views::KITCHEN, std::make_pair(glm::vec3(23.0f, -18.0f, 15.0f), glm::vec3(-6.0f, -25.0f, 6.0f))));
 
 	//create a player camera attached to a child of the player transform:
-	scene.transforms.emplace_back();
+	/*scene.transforms.emplace_back();
 	scene.cameras.emplace_back(&scene.transforms.back());
 	player.camera = &scene.cameras.back();
 	player.camera->fovy = glm::radians(60.0f);
@@ -295,43 +325,43 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//player.camera->transform->position = glm::vec3(0.0f, -5.0f, 5.0f);
 
 	//start player walking at nearest walk point:
-	player.at = walkmesh->nearest_walk_point(player.transform->position);
+	player.at = walkmesh->nearest_walk_point(player.transform->position);*/
 
 	//rotate camera facing direction (-z) to player facing direction (+y):
 	//player.camera->transform->rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	update_camera();
+	// update_camera();
 
-	player_height_default = player.transform->scale.z;
+	// player_height_default = player.transform->scale.z;
 
-	player_animations.reserve(3);
+	// player_animations.reserve(3);
 
-	for (auto& drawable : scene.drawables) {
-		if (drawable.transform->name == "Player") {
-			player_drawable = &drawable;
-			player_animations.emplace_back(*level1_banims, *player_anim_jump, BoneAnimationPlayer::Once);
-			player_animations.back().position = 0.0f;
-			player_animations.emplace_back(*level1_banims, *player_anim_walk, BoneAnimationPlayer::Once);
-			player_animations.back().position = 1.0f;
-			player_animations.emplace_back(*level1_banims, *player_anim_climb, BoneAnimationPlayer::Once);
-			player_animations.back().position = 0.0f;
-			drawable.pipeline.program = bone_vertex_color_program->program;
-			drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
-			drawable.pipeline.type = level1_banims->mesh.type;
-			drawable.pipeline.start = level1_banims->mesh.start;
-			drawable.pipeline.count = level1_banims->mesh.count;
-			drawable.pipeline.OBJECT_TO_CLIP_mat4 = bone_vertex_color_program->object_to_clip_mat4;
-			//drawable.pipeline.OBJECT_TO_CLIP_mat4 = lit_color_texture_program_pipeline.OBJECT_TO_CLIP_mat4;
-			drawable.pipeline.OBJECT_TO_LIGHT_mat4x3 = bone_vertex_color_program->object_to_light_mat4x3;
-			drawable.pipeline.NORMAL_TO_LIGHT_mat3 = bone_vertex_color_program->normal_to_light_mat3;
+	// for (auto& drawable : scene.drawables) {
+	// 	if (drawable.transform->name == "Player") {
+	// 		player_drawable = &drawable;
+	// 		player_animations.emplace_back(*level1_banims, *player_anim_jump, BoneAnimationPlayer::Once);
+	// 		player_animations.back().position = 0.0f;
+	// 		player_animations.emplace_back(*level1_banims, *player_anim_walk, BoneAnimationPlayer::Once);
+	// 		player_animations.back().position = 1.0f;
+	// 		player_animations.emplace_back(*level1_banims, *player_anim_climb, BoneAnimationPlayer::Once);
+	// 		player_animations.back().position = 0.0f;
+	// 		drawable.pipeline.program = bone_vertex_color_program->program;
+	// 		drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
+	// 		drawable.pipeline.type = level1_banims->mesh.type;
+	// 		drawable.pipeline.start = level1_banims->mesh.start;
+	// 		drawable.pipeline.count = level1_banims->mesh.count;
+	// 		drawable.pipeline.OBJECT_TO_CLIP_mat4 = bone_vertex_color_program->object_to_clip_mat4;
+	// 		//drawable.pipeline.OBJECT_TO_CLIP_mat4 = lit_color_texture_program_pipeline.OBJECT_TO_CLIP_mat4;
+	// 		drawable.pipeline.OBJECT_TO_LIGHT_mat4x3 = bone_vertex_color_program->object_to_light_mat4x3;
+	// 		drawable.pipeline.NORMAL_TO_LIGHT_mat3 = bone_vertex_color_program->normal_to_light_mat3;
 
-			BoneAnimationPlayer* anim_player = &player_animations.back();
-			drawable.pipeline.set_uniforms = [anim_player]() {
-				anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
-			};
+	// 		BoneAnimationPlayer* anim_player = &player_animations.back();
+	// 		drawable.pipeline.set_uniforms = [anim_player]() {
+	// 			anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
+	// 		};
 
 			
-		}
-	}
+	// 	}
+	// }
 
 }
 
@@ -1149,4 +1179,110 @@ void PlayMode::draw_textbox(float aspect)
 		textbox.pop_back();
 		size--;
 	}
+}
+
+void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh const * cur_walkmesh) {
+	scene = cur_scene;
+	std::string str_collectable("i_");
+	//create transforms:
+	for (auto& transform : scene.transforms) {
+	// player transforms
+		if (transform.name == "PlayerRig") player.transform = &transform;
+		if (transform.name == "PlayerShadow") shadow = &transform;
+		if (transform.name == "Shark") shark = &transform;
+
+		// add collectable transforms 
+		if (transform.name.find(str_collectable) != std::string::npos)
+		{
+			collectable_transforms.insert(std::pair<std::string, Scene::Transform*>(transform.name, &transform));
+		}
+	}
+
+	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
+	if (shadow == nullptr) throw std::runtime_error("GameObject not found.");
+	if (shark == nullptr) throw std::runtime_error("GameObject not found.");
+	shadow->position = glm::vec3(player.transform->position.x, player.transform->position.y, shadow->position.z);
+	shadow_base_height = shadow->position.z;
+
+	// go through the meshes and find obstacles.
+	std::string str_obstacle("o_");
+	std::string str_barrier("c_");
+	const auto& meshes = cur_mesh.meshes;
+	for (auto& mesh : meshes) {
+
+		if (mesh.first.find(str_obstacle) != std::string::npos)
+		{
+			auto& min = mesh.second.min;
+			auto& max = mesh.second.max;
+			glm::vec3 center = 0.5f * (min + max);
+			glm::vec3 rad = 0.5f * (max - min);
+			obstacles.emplace_back(Collision::AABB(center, rad));
+		}
+		else if (mesh.first.find(str_barrier) != std::string::npos)
+		{
+			auto& min = mesh.second.min;
+			auto& max = mesh.second.max;
+			glm::vec3 center = 0.5f * (min + max);
+			glm::vec3 rad = 0.5f * (max - min);
+			Collision::AABB box = Collision::AABB(center, rad);
+			//box.r.z = 100.0f; // set a big vertical barrier so you can never climb the obstacle
+			obstacles.emplace_back(box);
+		}
+		else if (mesh.first.find(str_collectable) != std::string::npos)
+		{
+			auto& min = mesh.second.min;
+			auto& max = mesh.second.max;
+			glm::vec3 center = 0.5f * (min + max);
+			glm::vec3 rad = 0.5f * (max - min);
+			Collision::AABB box = Collision::AABB(center, rad);
+			collectable_boxes.insert(std::pair<std::string,Collision::AABB>(mesh.first, box));
+		}
+	}
+
+	//create a player camera attached to a child of the player transform:
+	scene.transforms.emplace_back();
+	scene.cameras.emplace_back(&scene.transforms.back());
+	player.camera = &scene.cameras.back();
+	player.camera->fovy = glm::radians(60.0f);
+	player.camera->near = 0.01f;
+
+	//start player walking at nearest walk point:
+	player.at = cur_walkmesh->nearest_walk_point(player.transform->position);
+	walkmesh = cur_walkmesh;
+
+	update_camera();
+
+	player_height_default = player.transform->scale.z;
+
+	player_animations.reserve(3);
+
+	for (auto& drawable : scene.drawables) {
+		if (drawable.transform->name == "Player") {
+			player_drawable = &drawable;
+			player_animations.emplace_back(*level1_banims, *player_anim_jump, BoneAnimationPlayer::Once);
+			player_animations.back().position = 0.0f;
+			player_animations.emplace_back(*level1_banims, *player_anim_walk, BoneAnimationPlayer::Once);
+			player_animations.back().position = 1.0f;
+			player_animations.emplace_back(*level1_banims, *player_anim_climb, BoneAnimationPlayer::Once);
+			player_animations.back().position = 0.0f;
+			drawable.pipeline.program = bone_vertex_color_program->program;
+			drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
+			drawable.pipeline.type = level1_banims->mesh.type;
+			drawable.pipeline.start = level1_banims->mesh.start;
+			drawable.pipeline.count = level1_banims->mesh.count;
+			drawable.pipeline.OBJECT_TO_CLIP_mat4 = bone_vertex_color_program->object_to_clip_mat4;
+			//drawable.pipeline.OBJECT_TO_CLIP_mat4 = lit_color_texture_program_pipeline.OBJECT_TO_CLIP_mat4;
+			drawable.pipeline.OBJECT_TO_LIGHT_mat4x3 = bone_vertex_color_program->object_to_light_mat4x3;
+			drawable.pipeline.NORMAL_TO_LIGHT_mat3 = bone_vertex_color_program->normal_to_light_mat3;
+
+			BoneAnimationPlayer* anim_player = &player_animations.back();
+			drawable.pipeline.set_uniforms = [anim_player]() {
+				anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
+			};
+
+			
+		}
+	}
+
+
 }
