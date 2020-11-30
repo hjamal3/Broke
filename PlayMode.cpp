@@ -303,7 +303,7 @@ PlayMode::PlayMode() {
 	objectives.emplace_back(std::make_pair(glm::vec3(-8.52156f, -46.2738f, 4.80875f), "Find a way into the restaurant."));
 	objectives.emplace_back(std::make_pair(glm::vec3(20.8374f, -40.9954f, 4.83061f), "Collect the treasures mentioned in Fiance's note."));
 	objectives.emplace_back(std::make_pair(glm::vec3(-14.7522f, -6.78037f, 0.0f), "Get out of the restaurant through the door!"));
-	objectives.emplace_back(std::make_pair(glm::vec3(-14.211f, -6.77151f, 0.0f)), "PARKOUR YOUR WAY FROM THE SHARK!!!");
+	objectives.emplace_back(std::make_pair(glm::vec3(-14.211f, -6.77151f, 0.0f), "PARKOUR YOUR WAY FROM THE SHARK!!!"));
 
 	// camera position, target position
 	//cut_scenes.reserve(10);
@@ -582,6 +582,7 @@ void PlayMode::update(float elapsed) {
 				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f) {
 					game_state = SHARKSCENE;
 					cinematic = true;
+					cur_objective++;
 					return;
 				}
 			}
@@ -866,7 +867,7 @@ void PlayMode::update(float elapsed) {
 		}
 
 		// check if in range of something
-		if (cur_objective + 1 < (int)objectives.size() - 1) {
+		if (cur_objective + 1 < (int)objectives.size() - 2) {
 			glm::vec3 diff = player.transform->position - objectives[cur_objective + 1].first;
 			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 2.0f))
 			{
