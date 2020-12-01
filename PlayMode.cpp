@@ -124,7 +124,6 @@ void PlayMode::update_camera() {
 		glm::mat4 view = glm::lookAt(cut_scenes[view_scene].first, cut_scenes[view_scene].second, glm::vec3(0, 0, 1));
 		player.camera->transform->rotation = glm::conjugate(glm::quat_cast(view));
 		player.camera->transform->position = cut_scenes[view_scene].first;
-
 	}
 }
 
@@ -218,62 +217,7 @@ PlayMode::PlayMode() {
 	}
 
 	switch_scene((Scene &) *phonebank_scene, (MeshBuffer &) *phonebank_meshes, walkmesh_tutorial_level1);
-
-	/*std::string str_collectable("i_");
-	//create transforms:
-	for (auto& transform : scene.transforms) {
-	// player transforms
-		if (transform.name == "PlayerRig") player.transform = &transform;
-		if (transform.name == "PlayerShadow") shadow = &transform;
-		if (transform.name == "Shark") shark = &transform;
-
-		// add collectable transforms 
-		if (transform.name.find(str_collectable) != std::string::npos)
-		{
-			collectable_transforms.insert(std::pair<std::string, Scene::Transform*>(transform.name, &transform));
-		}
-	}
-
-	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
-	if (shadow == nullptr) throw std::runtime_error("GameObject not found.");
-	if (shark == nullptr) throw std::runtime_error("GameObject not found.");
-	shadow->position = glm::vec3(player.transform->position.x, player.transform->position.y, shadow->position.z);
-	shadow_base_height = shadow->position.z;
-
-	// go through the meshes and find obstacles.
-	std::string str_obstacle("o_");
-	std::string str_barrier("c_");
-	const auto& meshes = phonebank_meshes->meshes;
-	for (auto& mesh : meshes) {
-
-		if (mesh.first.find(str_obstacle) != std::string::npos)
-		{
-			auto& min = mesh.second.min;
-			auto& max = mesh.second.max;
-			glm::vec3 center = 0.5f * (min + max);
-			glm::vec3 rad = 0.5f * (max - min);
-			obstacles.emplace_back(Collision::AABB(center, rad));
-		}
-		else if (mesh.first.find(str_barrier) != std::string::npos)
-		{
-			auto& min = mesh.second.min;
-			auto& max = mesh.second.max;
-			glm::vec3 center = 0.5f * (min + max);
-			glm::vec3 rad = 0.5f * (max - min);
-			Collision::AABB box = Collision::AABB(center, rad);
-			//box.r.z = 100.0f; // set a big vertical barrier so you can never climb the obstacle
-			obstacles.emplace_back(box);
-		}
-		else if (mesh.first.find(str_collectable) != std::string::npos)
-		{
-			auto& min = mesh.second.min;
-			auto& max = mesh.second.max;
-			glm::vec3 center = 0.5f * (min + max);
-			glm::vec3 rad = 0.5f * (max - min);
-			Collision::AABB box = Collision::AABB(center, rad);
-			collectable_boxes.insert(std::pair<std::string,Collision::AABB>(mesh.first, box));
-		}
-	}*/
+	// switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
 
 	// create some message objects. hardcoded for now
 	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
@@ -313,57 +257,7 @@ PlayMode::PlayMode() {
 	cut_scenes.insert(std::make_pair(views::DINING_ROOM, std::make_pair(glm::vec3(-4.6f, -40.0, 16.0f), glm::vec3(11.26f, -26.0f, 2.90f))));
 	cut_scenes.insert(std::make_pair(views::HALLWAY, std::make_pair(glm::vec3(27.0f, -48.0f, 11.0f), glm::vec3(-4.2f, -48.0f, 0.0f))));
 	cut_scenes.insert(std::make_pair(views::KITCHEN, std::make_pair(glm::vec3(23.0f, -18.0f, 15.0f), glm::vec3(-6.0f, -25.0f, 6.0f))));
-
-	//create a player camera attached to a child of the player transform:
-	/*scene.transforms.emplace_back();
-	scene.cameras.emplace_back(&scene.transforms.back());
-	player.camera = &scene.cameras.back();
-	player.camera->fovy = glm::radians(60.0f);
-	player.camera->near = 0.01f;
-	//player.camera->transform->parent = player.transform;
-
-	//player's eyes are 1.8 units above the ground:
-	//player.camera->transform->position = glm::vec3(0.0f, -5.0f, 5.0f);
-
-	//start player walking at nearest walk point:
-	player.at = walkmesh->nearest_walk_point(player.transform->position);*/
-
-	//rotate camera facing direction (-z) to player facing direction (+y):
-	//player.camera->transform->rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	// update_camera();
-
-	// player_height_default = player.transform->scale.z;
-
-	// player_animations.reserve(3);
-
-	// for (auto& drawable : scene.drawables) {
-	// 	if (drawable.transform->name == "Player") {
-	// 		player_drawable = &drawable;
-	// 		player_animations.emplace_back(*level1_banims, *player_anim_jump, BoneAnimationPlayer::Once);
-	// 		player_animations.back().position = 0.0f;
-	// 		player_animations.emplace_back(*level1_banims, *player_anim_walk, BoneAnimationPlayer::Once);
-	// 		player_animations.back().position = 1.0f;
-	// 		player_animations.emplace_back(*level1_banims, *player_anim_climb, BoneAnimationPlayer::Once);
-	// 		player_animations.back().position = 0.0f;
-	// 		drawable.pipeline.program = bone_vertex_color_program->program;
-	// 		drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
-	// 		drawable.pipeline.type = level1_banims->mesh.type;
-	// 		drawable.pipeline.start = level1_banims->mesh.start;
-	// 		drawable.pipeline.count = level1_banims->mesh.count;
-	// 		drawable.pipeline.OBJECT_TO_CLIP_mat4 = bone_vertex_color_program->object_to_clip_mat4;
-	// 		//drawable.pipeline.OBJECT_TO_CLIP_mat4 = lit_color_texture_program_pipeline.OBJECT_TO_CLIP_mat4;
-	// 		drawable.pipeline.OBJECT_TO_LIGHT_mat4x3 = bone_vertex_color_program->object_to_light_mat4x3;
-	// 		drawable.pipeline.NORMAL_TO_LIGHT_mat3 = bone_vertex_color_program->normal_to_light_mat3;
-
-	// 		BoneAnimationPlayer* anim_player = &player_animations.back();
-	// 		drawable.pipeline.set_uniforms = [anim_player]() {
-	// 			anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
-	// 		};
-
-			
-	// 	}
-	// }
-
+	cut_scenes.insert(std::make_pair(views::SHARK_APPROACH, std::make_pair(glm::vec3(-3.0f, -72.0f, 2.0f), glm::vec3(-4.0f, -72.0f, 2.0f))));
 }
 
 PlayMode::~PlayMode() {
@@ -409,11 +303,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			//// to go back to the player
 			//view_scene = views::PLAYER;
 			// game_state = SHARKSCENE;
-			// if (walkmesh == walkmesh_chase1) {
-			// 	switch_scene((Scene &) *phonebank_scene, (MeshBuffer &) *phonebank_meshes, walkmesh_tutorial_level1);
-			// } else {
-			// 	switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
-			// }
+			if (walkmesh == walkmesh_chase1) {
+				switch_scene((Scene &) *phonebank_scene, (MeshBuffer &) *phonebank_meshes, walkmesh_tutorial_level1);
+			} else {
+				switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
+			}
 			return true;
 		}
 		else if (evt.key.keysym.sym == SDLK_SPACE) {
@@ -510,7 +404,7 @@ void PlayMode::update(float elapsed) {
 	} 
 	else if (game_state == CUTSCENE)
 	{
-		if (view_scene == (int) cut_scenes.size())
+		if (view_scene == 6)
 		{
 			view_scene = views::PLAYER;
 			game_state = PLAY;
@@ -520,25 +414,52 @@ void PlayMode::update(float elapsed) {
 	{
 		shark_timer += elapsed;
 		
-		if (shark_timer < 1.0f) {
+		// 1: create a film vibe by narrowing the top and bottom
+		if (shark_timer < 1.0f)
+		{
 			cinematic_edge_width += elapsed;
 		}
 
+		// 2: Shark emerges from tank
 		if (shark_timer < 4.5f && shark_timer > 1.0f)
 		{
 			shark->position.z += elapsed;
 		}
-		view_scene = views::SHARK_TANK;
 
-		// add a second delay for dramatic effect
-		if (shark_timer > 5.5f)
+		// 3: add a second delay for dramatic effect and switch scene
+		if (shark_timer > 5.5f && walkmesh != walkmesh_chase1)
+		{
+			switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
+			view_scene = views::SHARK_APPROACH;
+			jump_up_velocity = jump_speed;
+		}
+
+		// 4: Shark approaches player and player jumps and starts parkouring
+		if (shark_timer > 5.5f && shark_timer < 6.5)
+		{
+			shark_chasing_speed += elapsed * 5.0f;
+			shark->position.y += elapsed * shark_chasing_speed;
+			
+			jump_up_velocity -= gravity * elapsed;
+			z_relative += jump_up_velocity * elapsed;
+			if (z_relative < 0.0f) z_relative = 0.0f;
+			player.transform->position.z = z_relative;
+
+			player_animations[0].position += elapsed;
+			player_animations[0].update(elapsed);
+			BoneAnimationPlayer* anim_player = &player_animations[0];
+			player_drawable->pipeline.set_uniforms = [anim_player]() {
+				anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
+			};
+		}
+
+		if (shark_timer > 6.5f)
 		{
 			view_scene = views::PLAYER;
 			game_state = PLAY;
 			cinematic = false;
 			cinematic_edge_width = 0.0f;
 			chasing = true;
-			switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
 		}
 	}
 	else if (game_state == PLAY)
@@ -581,6 +502,7 @@ void PlayMode::update(float elapsed) {
 				glm::vec3 diff = player.transform->position - glm::vec3(-14.211f, -6.77151f, 0.0f);
 				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f) {
 					game_state = SHARKSCENE;
+					view_scene = views::SHARK_TANK;
 					cinematic = true;
 					cur_objective++;
 					return;

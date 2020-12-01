@@ -82,7 +82,7 @@ struct PlayMode : Mode {
 	float pitch = 0.25f;
 	glm::vec3 look_offset = glm::vec3(0.0f, 0.0f, 0.8f);
 	void interpolate_views(int view1, int view2, float time);
-	enum views {PLAYER, SHARK_TANK, START_ROOM1, START_ROOM2, HALLWAY, DINING_ROOM, KITCHEN};
+	enum views {PLAYER, SHARK_TANK, START_ROOM1, START_ROOM2, HALLWAY, DINING_ROOM, KITCHEN, SHARK_APPROACH};
 
 	//game related states
 	int ingredients_collected = 0;
@@ -161,4 +161,5 @@ struct PlayMode : Mode {
 	// shark variables
 	Scene::Transform* shark = nullptr;
 	float shark_timer = 0;
+	float shark_chasing_speed = 2.0f;
 };
