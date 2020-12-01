@@ -24,6 +24,10 @@ struct PlayMode : Mode {
 	void step_in_mesh(glm::vec3& remain);
 	void add_to_textbox(glm::vec2 center, glm::vec2 radius);
 	void draw_textbox(float aspect);
+	void add_cinematic_edges(float x, float y);
+
+	// scene switching function that changes from one level to another
+	void switch_scene(Scene& scene, MeshBuffer& mesh, WalkMesh const * walkmesh);
 
 	void reset_sliding();
 
@@ -83,8 +87,15 @@ struct PlayMode : Mode {
 	//game related states
 	int ingredients_collected = 0;
 
-	//local copy of the game scene (so code can change it during gameplay):
+	// The following two variables are updated in switch_scene when the necessasity comes up
+	// local copy of the game scene (so code can change it during gameplay)
 	Scene scene;
+	// current walkmesh based on game progress
+	WalkMesh const * walkmesh = nullptr;
+	// when cutscenes are loaded
+	bool cinematic = false;
+	bool chasing = false;
+	float cinematic_edge_width = 0.0f;
 
 	//player info:
 	struct Player {
@@ -130,7 +141,7 @@ struct PlayMode : Mode {
 	enum Action_State { a_PAUSED, a_GROUND, a_JUMPING, a_PLATFORM, a_SLIDING, a_LAUNCHING, a_IN_AIR, a_CLIMBING};
 	Action_State action_state = a_GROUND;
 
-	enum Game_State {PROLOGUE, PLAY, CUTSCENE,SHARKSCENE};
+	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, PARKOUR};
 	Game_State game_state = PROLOGUE;
 
 	bool prologue = true;
@@ -150,5 +161,4 @@ struct PlayMode : Mode {
 	// shark variables
 	Scene::Transform* shark = nullptr;
 	float shark_timer = 0;
-
 };
