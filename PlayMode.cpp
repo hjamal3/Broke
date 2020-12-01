@@ -646,7 +646,7 @@ void PlayMode::update(float elapsed) {
 		float player_height = 0.75f / 2.0f;
 		if (sliding) player_height = 0.15f;
 		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.45f,0.4f,player_height });
-		player_box.c.z += player_box.r.z; // hardcode z-offset because in blender frame is at bottom
+		player_box.c.z += player_box.r.z - 0.001f; // hardcode z-offset because in blender frame is at bottom
 		bool reset_pos = false;
 
 		// collision checking
