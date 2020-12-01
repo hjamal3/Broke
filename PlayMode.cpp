@@ -885,7 +885,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	if (!chasing) {
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 	} else {
-		glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
+		glClearColor(13.0f / 255.0f, 29.0f / 255.0f, 56.0f / 255.0f, 1.0f);
 	}
 	glClearDepth(1.0f); //1.0 is actually the default value to clear the depth buffer to, but FYI you can change it.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
