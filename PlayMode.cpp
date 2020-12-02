@@ -105,6 +105,10 @@ Load< Sound::Sample > land_sample(LoadTagDefault, []() -> Sound::Sample const* {
 	return new Sound::Sample(data_path("wet_sound_2.wav"));
 });
 
+Load< Sound::Sample > collect_sample(LoadTagDefault, []() -> Sound::Sample const* {
+	return new Sound::Sample(data_path("collect.wav"));
+});
+
 
 void PlayMode::update_camera() {
 	if (!view_scene)
@@ -814,6 +818,7 @@ void PlayMode::update(float elapsed) {
 				Scene::Transform* transform = collectable_transforms.at(name);
 				transform->position.z = -100.0f;
 				ingredients_collected++;
+				collect_sound = Sound::play(*collect_sample, 0.5f);
 			}
 		}
 		// Update animation steps

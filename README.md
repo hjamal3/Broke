@@ -17,7 +17,10 @@ Jump with space, crouch/slide with left shift. Climb onto ledges with space when
 Zoom camera with scroll wheel.
 
 Sources: All the visual assets were made by us (so far). Most of the library code was written by Jim McMann.
+
 The jumping and landing sounds were sampled from https://freesound.org/people/kyles/sounds/450830/ under the creative commons 0 license.
+
+Item collection sounds were sampled from https://freesound.org/people/djlprojects/sounds/413629/ under the Attribution license.
 
 This game was built with [NEST](NEST.md).
 
