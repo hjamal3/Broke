@@ -504,7 +504,7 @@ void PlayMode::update(float elapsed) {
 			// hardcoded door position to play shark scene
 			if (cur_objective == 3) {
 				glm::vec3 diff = player.transform->position - glm::vec3(-14.211f, -6.77151f, 0.0f);
-				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f) {
+				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 3.0f) {
 					game_state = SHARKSCENE;
 					view_scene = views::SHARK_TANK;
 					cinematic = true;
@@ -729,14 +729,14 @@ void PlayMode::update(float elapsed) {
 			}
 			if (!collision)
 			{
-				last_collision = 0; // if there was no collision, clear variable (used for sliding motion)
+last_collision = 0; // if there was no collision, clear variable (used for sliding motion)
 			}
 		}
 		else {
-			if (Collision::testCollision(*obstacle_box, player_box)) {
-				player.at = before;
-				reset_pos = true;
-			}
+		if (Collision::testCollision(*obstacle_box, player_box)) {
+			player.at = before;
+			reset_pos = true;
+		}
 		}
 
 		// there was no collision, update player's transform
@@ -821,6 +821,22 @@ void PlayMode::update(float elapsed) {
 				collect_sound = Sound::play(*collect_sample, 0.5f);
 			}
 		}
+
+		// reset locations (crosses)
+		for (auto it = reset_locations.begin(); it != reset_locations.end(); it++)
+		{
+			Collision::AABB& box = *it;
+			if (testCollisionXY(box, player_box))
+			{
+				if (box.c.z - (player_box.c.z - player_box.r.z) < 2.0f)
+				{
+					switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+				}
+				std::cout << "hi" << std::endl;
+			}
+
+		}
+
 		// Update animation steps
 		if (jumping == true) {
 			player_state = JUMP;
@@ -1205,6 +1221,7 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	// go through the meshes and find obstacles.
 	std::string str_obstacle("o_");
 	std::string str_barrier("c_");
+	std::string str_reset("d_");
 	const auto& meshes = cur_mesh.meshes;
 	for (auto& mesh : meshes) {
 
@@ -1234,6 +1251,14 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 			glm::vec3 rad = 0.5f * (max - min);
 			Collision::AABB box = Collision::AABB(center, rad);
 			collectable_boxes.insert(std::pair<std::string,Collision::AABB>(mesh.first, box));
+		} 
+		else if (mesh.first.find(str_reset) != std::string::npos)
+		{
+			auto& min = mesh.second.min;
+			auto& max = mesh.second.max;
+			glm::vec3 center = 0.5f * (min + max);
+			glm::vec3 rad = 0.5f * (max - min);
+			reset_locations.emplace_back(Collision::AABB(center, rad));
 		}
 	}
 

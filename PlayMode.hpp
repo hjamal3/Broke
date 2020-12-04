@@ -123,6 +123,7 @@ struct PlayMode : Mode {
 
 	// primitives info
 	std::vector<Collision::AABB> obstacles;
+	std::vector<Collision::AABB> reset_locations;
 	std::map<std::string, Scene::Transform*> collectable_transforms;
 	std::map<std::string, Collision::AABB> collectable_boxes;
 
@@ -142,7 +143,7 @@ struct PlayMode : Mode {
 	Action_State action_state = a_GROUND;
 
 	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, PARKOUR};
-	Game_State game_state = PROLOGUE;
+	Game_State game_state = SHARKSCENE;
 
 	bool prologue = true;
 	int prologue_message = 0;
