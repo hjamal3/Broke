@@ -903,7 +903,6 @@ last_collision = 0; // if there was no collision, clear variable (used for slidi
 			else
 			{
 				// try to go in direction of octopus
-				bool collided = false;
 				for (Collision::AABB& p : obstacles)
 				{
 					if (Collision::testCollision(p, shark_box))
