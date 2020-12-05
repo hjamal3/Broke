@@ -229,6 +229,7 @@ PlayMode::PlayMode() {
 	messages.emplace_back(std::make_pair(glm::vec3(-1.0f, -46.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
 	messages.emplace_back(std::make_pair(glm::vec3(7.0f, -47.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
 	messages.emplace_back(std::make_pair(glm::vec3(-9.0f, -46.0f, 0.0f), "Hint: You can't actually climb the bookshelf. Go around."));
+	messages.emplace_back(std::make_pair(glm::vec3(-14.0f, -6.85f, 0.0f), "Slide under the door to exit."));
 
 	// intialize the prologue introductory texts
 	prologue_messages.push_back("I'm a broke octopus./Press Space to Continue");
