@@ -883,6 +883,47 @@ last_collision = 0; // if there was no collision, clear variable (used for slidi
 		right.downs = 0;
 		up.downs = 0;
 		down.downs = 0;
+
+		// shark chasing
+		if (chasing)
+		{
+			// shark AI logic: keep it simple. 
+			// shark tries to move in direction of octopus, if collides, goes straight, if collides, goes up
+			glm::vec3 shark_pos = shark->position;
+			glm::vec3 init_shark_pos = shark->position;
+
+			// difference from nose of shark
+			glm::vec3 diff = temp_pos - (shark_pos+glm::vec3(0.0f,shark_box.r.y-0.9f, -shark_box.r.z/2.0f));
+			shark_pos += glm::normalize(diff) * shark_chasing_speed * elapsed;
+			shark_box.c = shark_pos;
+			if (glm::length(diff) < 0.2f)
+			{
+				//switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+			}
+			else
+			{
+				// try to go in direction of octopus
+				bool collided = false;
+				for (Collision::AABB& p : obstacles)
+				{
+					if (Collision::testCollision(p, shark_box))
+					{
+						// go up instead
+						std::cout << "col" << std::endl;
+						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, shark_chasing_speed * elapsed);
+						break;
+					}
+				}
+				// update transform
+				shark->position = shark_pos;
+			}
+
+			
+
+		
+		}
+
+
 	}
 
 	update_camera();
@@ -1258,6 +1299,14 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 			glm::vec3 center = 0.5f * (min + max);
 			glm::vec3 rad = 0.5f * (max - min);
 			reset_locations.emplace_back(Collision::AABB(center, rad));
+		}
+		else if (mesh.first.find("Shark") != std::string::npos)
+		{
+			auto& min = mesh.second.min;
+			auto& max = mesh.second.max;
+			glm::vec3 center = 0.5f * (min + max);
+			glm::vec3 rad = 0.5f * (max - min);
+			shark_box = Collision::AABB(center, rad);
 		}
 	}
 
