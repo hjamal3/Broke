@@ -828,7 +828,7 @@ last_collision = 0; // if there was no collision, clear variable (used for slidi
 			Collision::AABB& box = *it;
 			if (testCollisionXY(box, player_box))
 			{
-				if (std::abs(box.c.z - (player_box.c.z - player_box.r.z) < 2.0f))
+				if (std::abs(box.c.z - (player_box.c.z - player_box.r.z)) < 2.0f)
 				{
 					switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
 				}
