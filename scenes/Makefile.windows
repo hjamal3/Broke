@@ -7,9 +7,12 @@ all : \
     $(DIST)/level1.scene \
     $(DIST)/level1.w \
     $(DIST)/level1.banims \
-    $(DIST)/chase1.pnct \
-    $(DIST)/chase1.scene \
-    $(DIST)/chase1.w \
+    $(DIST)/chase1_test.pnct \
+    $(DIST)/chase1_test.scene \
+    $(DIST)/chase1_test.w \
+    $(DIST)/chasef.pnct \
+    $(DIST)/chasef.scene \
+    $(DIST)/chasef.w
 
 
 $(DIST)/level1.scene : level1.blend export-scene.py
@@ -25,10 +28,19 @@ $(DIST)/level1.banims : level1.blend export-animation.py
     $(BLENDER) --background --python export-animation.py -- "level1.blend" "PlayerRig" "[0,29]Jump;[50,69]Walk;[80,99]Climb" "$(DIST)/level1.banims" 
 
 $(DIST)/chase1.scene : chase_level1.blend export-scene.py
-    $(BLENDER) --background --python export-scene.py -- "chase_level1.blend:Platforms" "$(DIST)/chase1.scene"
+    $(BLENDER) --background --python export-scene.py -- "chase_level1.blend:Platforms" "$(DIST)/chase1_test.scene"
 
 $(DIST)/chase1.pnct : chase_level1.blend export-meshes.py
-    $(BLENDER) --background --python export-meshes.py -- "chase_level1.blend:Platforms" "$(DIST)/chase1.pnct" 
+    $(BLENDER) --background --python export-meshes.py -- "chase_level1.blend:Platforms" "$(DIST)/chase1_test.pnct" 
 
 $(DIST)/chase1.w : chase_level1.blend export-walkmeshes.py
-    $(BLENDER) --background --python export-walkmeshes.py -- "chase_level1.blend:WalkMeshes.001" "$(DIST)/chase1.w" 
+    $(BLENDER) --background --python export-walkmeshes.py -- "chase_level1.blend:WalkMeshes.001" "$(DIST)/chase1_test.w" 
+
+$(DIST)/chasef.scene : chase_final.blend export-scene.py
+    $(BLENDER) --background --python export-scene.py -- "chase_final.blend:Platforms" "$(DIST)/chasef.scene"
+
+$(DIST)/chasef.pnct : chase_final.blend export-meshes.py
+    $(BLENDER) --background --python export-meshes.py -- "chase_final.blend:Platforms" "$(DIST)/chasef.pnct" 
+
+$(DIST)/chasef.w : chase_final.blend export-walkmeshes.py
+    $(BLENDER) --background --python export-walkmeshes.py -- "chase_final.blend:WalkMeshes" "$(DIST)/chasef.w" 
