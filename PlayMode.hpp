@@ -143,7 +143,7 @@ struct PlayMode : Mode {
 	Action_State action_state = a_GROUND;
 
 	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, PARKOUR};
-	Game_State game_state = PROLOGUE; 
+	Game_State game_state = SHARKSCENE;
 
 	bool prologue = true;
 	int prologue_message = 0;
