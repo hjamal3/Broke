@@ -25,6 +25,7 @@ namespace Collision
 
 	struct Primitive
 	{
+		Primitive() = default;
 		Primitive(PrimitiveType _type) : type(_type) { }
 		PrimitiveType type;
 	};
@@ -32,7 +33,7 @@ namespace Collision
 	// axis aligned bounding box
 	struct AABB : Primitive
 	{
-		AABB();
+		AABB() = default;
 		AABB(glm::vec3 c_, glm::vec3 r_) : Primitive(PrimitiveType::AABB), c(c_), r(r_) {}
 		glm::vec3 c; // center
 		glm::vec3 r; // radius in x,y,z direction

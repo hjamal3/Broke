@@ -229,6 +229,7 @@ PlayMode::PlayMode() {
 	messages.emplace_back(std::make_pair(glm::vec3(-1.0f, -46.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
 	messages.emplace_back(std::make_pair(glm::vec3(7.0f, -47.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
 	messages.emplace_back(std::make_pair(glm::vec3(-9.0f, -46.0f, 0.0f), "Hint: You can't actually climb the bookshelf. Go around."));
+	messages.emplace_back(std::make_pair(glm::vec3(-14.0f, -6.85f, 0.0f), "Slide under the door to exit."));
 
 	// intialize the prologue introductory texts
 	prologue_messages.push_back("I'm a broke octopus./Press Space to Continue");
@@ -504,7 +505,7 @@ void PlayMode::update(float elapsed) {
 			// hardcoded door position to play shark scene
 			if (cur_objective == 3) {
 				glm::vec3 diff = player.transform->position - glm::vec3(-14.211f, -6.77151f, 0.0f);
-				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f) {
+				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 3.0f) {
 					game_state = SHARKSCENE;
 					view_scene = views::SHARK_TANK;
 					cinematic = true;
@@ -729,14 +730,14 @@ void PlayMode::update(float elapsed) {
 			}
 			if (!collision)
 			{
-				last_collision = 0; // if there was no collision, clear variable (used for sliding motion)
+last_collision = 0; // if there was no collision, clear variable (used for sliding motion)
 			}
 		}
 		else {
-			if (Collision::testCollision(*obstacle_box, player_box)) {
-				player.at = before;
-				reset_pos = true;
-			}
+		if (Collision::testCollision(*obstacle_box, player_box)) {
+			player.at = before;
+			reset_pos = true;
+		}
 		}
 
 		// there was no collision, update player's transform
@@ -821,6 +822,21 @@ void PlayMode::update(float elapsed) {
 				collect_sound = Sound::play(*collect_sample, 0.5f);
 			}
 		}
+
+		// reset locations (crosses)
+		for (auto it = reset_locations.begin(); it != reset_locations.end(); it++)
+		{
+			Collision::AABB& box = *it;
+			if (testCollisionXY(box, player_box))
+			{
+				if (std::abs(box.c.z - (player_box.c.z - player_box.r.z)) < 2.0f)
+				{
+					switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+				}
+			}
+
+		}
+
 		// Update animation steps
 		if (jumping == true) {
 			player_state = JUMP;
@@ -868,6 +884,46 @@ void PlayMode::update(float elapsed) {
 		right.downs = 0;
 		up.downs = 0;
 		down.downs = 0;
+
+		// shark chasing
+		if (chasing)
+		{
+			// shark AI logic: keep it simple. 
+			// shark tries to move in direction of octopus, if collides, goes straight, if collides, goes up
+			glm::vec3 shark_pos = shark->position;
+			glm::vec3 init_shark_pos = shark->position;
+
+			// difference from nose of shark
+			glm::vec3 diff = temp_pos - (shark_pos+glm::vec3(0.0f,shark_box.r.y-0.9f, -shark_box.r.z/2.0f));
+			shark_pos += glm::normalize(diff) * shark_chasing_speed * elapsed;
+			shark_box.c = shark_pos;
+			if (glm::length(diff) < 0.2f)
+			{
+				//switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+			}
+			else
+			{
+				// try to go in direction of octopus
+				for (Collision::AABB& p : obstacles)
+				{
+					if (Collision::testCollision(p, shark_box))
+					{
+						// go up instead
+						std::cout << "col" << std::endl;
+						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, shark_chasing_speed * elapsed);
+						break;
+					}
+				}
+				// update transform
+				shark->position = shark_pos;
+			}
+
+			
+
+		
+		}
+
+
 	}
 
 	update_camera();
@@ -1205,6 +1261,7 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	// go through the meshes and find obstacles.
 	std::string str_obstacle("o_");
 	std::string str_barrier("c_");
+	std::string str_reset("d_");
 	const auto& meshes = cur_mesh.meshes;
 	for (auto& mesh : meshes) {
 
@@ -1234,6 +1291,22 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 			glm::vec3 rad = 0.5f * (max - min);
 			Collision::AABB box = Collision::AABB(center, rad);
 			collectable_boxes.insert(std::pair<std::string,Collision::AABB>(mesh.first, box));
+		} 
+		else if (mesh.first.find(str_reset) != std::string::npos)
+		{
+			auto& min = mesh.second.min;
+			auto& max = mesh.second.max;
+			glm::vec3 center = 0.5f * (min + max);
+			glm::vec3 rad = 0.5f * (max - min);
+			reset_locations.emplace_back(Collision::AABB(center, rad));
+		}
+		else if (mesh.first.find("Shark") != std::string::npos)
+		{
+			auto& min = mesh.second.min;
+			auto& max = mesh.second.max;
+			glm::vec3 center = 0.5f * (min + max);
+			glm::vec3 rad = 0.5f * (max - min);
+			shark_box = Collision::AABB(center, rad);
 		}
 	}
 

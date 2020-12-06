@@ -123,6 +123,7 @@ struct PlayMode : Mode {
 
 	// primitives info
 	std::vector<Collision::AABB> obstacles;
+	std::vector<Collision::AABB> reset_locations;
 	std::map<std::string, Scene::Transform*> collectable_transforms;
 	std::map<std::string, Collision::AABB> collectable_boxes;
 
@@ -163,4 +164,5 @@ struct PlayMode : Mode {
 	Scene::Transform* shark = nullptr;
 	float shark_timer = 0;
 	float shark_chasing_speed = 2.0f;
+	Collision::AABB shark_box;
 };
