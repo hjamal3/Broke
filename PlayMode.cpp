@@ -29,7 +29,7 @@ Load< MeshBuffer > phonebank_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 	return ret;
 });
 Load< MeshBuffer > chase1_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("chase1_test.pnct"));
+	MeshBuffer const *ret = new MeshBuffer(data_path("chase1.pnct"));
 	chase1_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
@@ -829,9 +829,10 @@ last_collision = 0; // if there was no collision, clear variable (used for slidi
 			Collision::AABB& box = *it;
 			if (testCollisionXY(box, player_box))
 			{
-				if (std::abs(box.c.z - (player_box.c.z - player_box.r.z)) < 2.0f)
+				if (std::abs(box.c.z - (player_box.c.z - player_box.r.z)) < 0.5f)
 				{
 					switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+					return;
 				}
 			}
 
@@ -909,7 +910,7 @@ last_collision = 0; // if there was no collision, clear variable (used for slidi
 					if (Collision::testCollision(p, shark_box))
 					{
 						// go up instead
-						std::cout << "col" << std::endl;
+						//std::cout << "col" << std::endl;
 						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, shark_chasing_speed * elapsed);
 						break;
 					}
@@ -1264,7 +1265,6 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	std::string str_reset("d_");
 	const auto& meshes = cur_mesh.meshes;
 	for (auto& mesh : meshes) {
-
 		if (mesh.first.find(str_obstacle) != std::string::npos)
 		{
 			auto& min = mesh.second.min;
