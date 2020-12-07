@@ -20,6 +20,7 @@
 
 GLuint phonebank_meshes_for_lit_color_texture_program = 0;
 GLuint chase1_meshes_for_lit_color_texture_program = 0;
+GLuint chasef_meshes_for_lit_color_texture_program = 0;
 GLuint vertex_buffer_for_color_texture_program = 0;
 GLuint vertex_buffer = 0;
 GLuint white_tex = 0;
@@ -31,6 +32,11 @@ Load< MeshBuffer > phonebank_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 Load< MeshBuffer > chase1_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 	MeshBuffer const *ret = new MeshBuffer(data_path("chase1.pnct"));
 	chase1_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+});
+Load< MeshBuffer > chasef_meshes(LoadTagDefault, []() -> MeshBuffer const* {
+	MeshBuffer const* ret = new MeshBuffer(data_path("chasef.pnct"));
+	chasef_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
@@ -66,9 +72,26 @@ Load< Scene > chase1_scene(LoadTagDefault, []() -> Scene const * {
 
 	});
 });
+Load< Scene > chasef_scene(LoadTagDefault, []() -> Scene const* {
+	return new Scene(data_path("chasef.scene"), [&](Scene& scene, Scene::Transform* transform, std::string const& mesh_name) {
+		Mesh const& mesh = chasef_meshes->lookup(mesh_name);
+
+		scene.drawables.emplace_back(transform);
+		Scene::Drawable& drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = chasef_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+
+	});
+});
 
 WalkMesh const *walkmesh_tutorial_level1 = nullptr;
 WalkMesh const *walkmesh_chase1 = nullptr;
+WalkMesh const* walkmesh_chasef = nullptr;
 Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
 	WalkMeshes *ret = new WalkMeshes(data_path("level1.w"));
 	walkmesh_tutorial_level1 = &ret->lookup("WalkMesh");
@@ -77,6 +100,11 @@ Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const
 Load< WalkMeshes > chase1_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
 	WalkMeshes *ret = new WalkMeshes(data_path("chase1.w"));
 	walkmesh_chase1 = &ret->lookup("WalkMesh.001");
+	return ret;
+});
+Load< WalkMeshes > chasef_walkmeshes(LoadTagDefault, []() -> WalkMeshes const* {
+	WalkMeshes* ret = new WalkMeshes(data_path("chasef.w"));
+	walkmesh_chasef = &ret->lookup("WalkMesh");
 	return ret;
 });
 
@@ -219,18 +247,10 @@ PlayMode::PlayMode() {
 
 		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
 	}
-
 	switch_scene((Scene &) *phonebank_scene, (MeshBuffer &) *phonebank_meshes, walkmesh_tutorial_level1);
-	// switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
-
-	// create some message objects. hardcoded for now
-	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
-	messages.emplace_back(std::make_pair(glm::vec3(-8.5f, -46.0f, 5.0f), "Hold left shift to crawl. Scroll mousewheel to zoom camera."));
-	messages.emplace_back(std::make_pair(glm::vec3(-1.0f, -46.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
-	messages.emplace_back(std::make_pair(glm::vec3(7.0f, -47.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
-	messages.emplace_back(std::make_pair(glm::vec3(-9.0f, -46.0f, 0.0f), "Hint: You can't actually climb the bookshelf. Go around."));
-	messages.emplace_back(std::make_pair(glm::vec3(-14.0f, -6.85f, 0.0f), "Slide under the door to exit."));
-
+	//switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
+	//switch_scene((Scene&)*chasef_scene, (MeshBuffer&)*chasef_meshes, walkmesh_chasef);
+	
 	// intialize the prologue introductory texts
 	prologue_messages.push_back("I'm a broke octopus./Press Space to Continue");
 	prologue_messages.push_back("I used to live in the depth of the ocean with my girlfriend...");
@@ -308,10 +328,13 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			//// to go back to the player
 			//view_scene = views::PLAYER;
 			// game_state = SHARKSCENE;
-			if (walkmesh == walkmesh_chase1) {
-				switch_scene((Scene &) *phonebank_scene, (MeshBuffer &) *phonebank_meshes, walkmesh_tutorial_level1);
-			} else {
-				switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
+			if (walkmesh == walkmesh_chasef) {
+				switch_scene((Scene&)*phonebank_scene, (MeshBuffer&)*phonebank_meshes, walkmesh_tutorial_level1);
+			} else if (walkmesh == walkmesh_chase1) {
+				switch_scene((Scene &) *chasef_scene, (MeshBuffer &) *chasef_meshes, walkmesh_chasef);
+			}
+			else if (walkmesh == walkmesh_tutorial_level1) {
+				switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
 			}
 			return true;
 		}
@@ -731,7 +754,7 @@ void PlayMode::update(float elapsed) {
 			}
 			if (!collision)
 			{
-last_collision = 0; // if there was no collision, clear variable (used for sliding motion)
+				last_collision = 0; // if there was no collision, clear variable (used for sliding motion)
 			}
 		}
 		else {
@@ -929,6 +952,326 @@ last_collision = 0; // if there was no collision, clear variable (used for slidi
 
 
 	}
+	else if (game_state == FINAL) {
+		//combine inputs into a move:
+		glm::vec2 move = glm::vec2(0.0f);
+
+		// set player speeds
+		// if player is still reset to low speed multiplier
+		if (!(up.pressed || down.pressed || left.pressed || right.pressed || slide.pressed || jump.pressed))
+		{
+			speed_multiplier = low_speed; // don't start at 0 speed, this looks better
+		}
+		// use acceleration to set speed multiplier
+		else if (!in_air)
+		{
+			speed_multiplier = std::min(1.0f, speed_multiplier + accel * elapsed);
+		}
+		// set the speed itself
+		PlayerSpeed = PlayerSpeedMax * speed_multiplier;
+
+		// start jump
+		if (jump.pressed && released) {
+			if (!in_air) {
+				released = false;
+				in_air = true;
+				jump_up_velocity = mounted_jump_speed;
+				jump_first_time = true;
+				jump_sound = Sound::play(*jump_sample, 1.0f);
+			}
+		}
+
+		if (left.pressed && !right.pressed) move.x = -1.0f;
+		if (!left.pressed && right.pressed) move.x = 1.0f;
+		if (down.pressed && !up.pressed) move.y = -1.0f;
+		if (!down.pressed && up.pressed) move.y = 1.0f;
+
+		// store current move for jumping if first time jumping
+		if (jump_first_time)
+		{
+			jump_first_time = false;
+			jumping = true;
+			jump_PlayerSpeed = PlayerSpeed;
+			if (move != glm::vec2(0.0f))
+			{
+				jump_move = move;
+			}
+			else
+			{
+				jump_move = glm::vec2(0.0f);
+			}
+		}
+
+		// Setting motion speeds
+		if (!jumping)
+		{
+			//make it so that moving diagonally doesn't go faster:
+			if (move != glm::vec2(0.0f)) {
+				move = glm::normalize(move) * PlayerSpeed * elapsed;
+			}
+		}
+		else
+		{
+			if (jump_move != glm::vec2(0.0f))
+			{
+				// if you are jumping and want to slow down
+				if (jump_move.y > 0 && jump_move.x == 0 && move.y < 0 && move.x == 0 && jump_PlayerSpeed > 0.0f)
+				{
+					jump_PlayerSpeed -= 0.2f;
+				}
+				jump_move = glm::normalize(jump_move + move / 20.0f);
+				move = jump_move * jump_PlayerSpeed * elapsed;
+			}
+			else
+			{
+				// if still, add a little bit of speed
+				if (move != glm::vec2(0.0f))
+				{
+					jump_move = glm::normalize(move);
+					jump_PlayerSpeed = PlayerSpeedMax / 3.0f;
+					move = jump_move * jump_PlayerSpeed * elapsed;
+				}
+				else
+				{
+					move = glm::vec2(0.0f);
+				}
+			}
+		}
+
+		//get move in world coordinate system:
+		glm::vec3 remain = player.transform->make_local_to_world() * glm::vec4(move.x, move.y, 0.0f, 0.0f);
+		glm::vec3 remain_copy = remain;
+
+		// WalkPoint before moving, used to reset if collisions
+		WalkPoint before = player.at;
+
+		// step in walkmesh.
+		step_in_mesh(remain);
+
+		//update player's 3D position to respect walking
+		glm::vec3 temp_pos;
+		glm::quat temp_rot;
+		step_in_3D(temp_pos, temp_rot);
+
+		// jumping: 
+		if (in_air) {
+			// cap fall speed
+			if (jump_up_velocity - gravity * elapsed < mounted_max_fall_speed) {
+				jump_up_velocity = max_fall_speed;
+			}
+			else {
+				jump_up_velocity -= gravity * elapsed;
+			}
+			z_relative += jump_up_velocity * elapsed;
+			// landing on the ground
+			if (z_relative <= 0.0f) {
+				z_relative = 0.0f;
+				jump_up_velocity = 0.0f;
+				in_air = false;
+				on_platform = false;
+				jumping = false;
+				land_sound = Sound::play(*land_sample, 1.0f);
+			}
+		}
+
+		// update position in z due to jumping (or not)
+		temp_pos.z = temp_pos.z + z_relative;
+
+		// check if the new position leads to a collision
+		// create player bounding box
+		float player_height = 2.0f;
+		if (sliding) player_height = 0.15f;
+		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.5f,0.75f,player_height });
+		player_box.c.z += player_box.r.z - 0.001f; // hardcode z-offset because in blender frame is at bottom
+		bool reset_pos = false;
+
+		// collision checking
+		bool collision = false;
+		for (Collision::AABB& p : obstacles)
+		{
+			int collision_x_or_y = Collision::testCollision(p, player_box);
+			if (collision_x_or_y && obstacle_box != &p)
+			{
+				collision = true;
+				float obstacle_height = p.c.z + p.r.z;
+				if (in_air) {
+					// if the top of player hits bottom of obstacle, set velocity to 0.0f
+					if (jump_up_velocity > 0 && p.c.z - p.r.z <= player_box.c.z + player_box.r.z &&
+						p.c.z - p.r.z >= player_box.c.z + player_box.r.z - jump_up_velocity * elapsed)
+					{
+						z_relative -= jump_up_velocity * elapsed;
+						jump_up_velocity = 0.0f;
+					}
+					// land on platform
+					if (jump_up_velocity < 0 && std::abs(z_relative - obstacle_height) < 0.4f) {
+						z_relative = obstacle_height;
+						jump_up_velocity = 0.0f;
+						in_air = false;
+						on_platform = true;
+						obstacle_box = &p;
+						jumping = false;
+						land_sound = Sound::play(*land_sample, 1.0f);
+					}
+				}
+				player.at = before; // revert position
+				// if not on a platform and not in the air, you want to slide along the obstacle in direction of no collision
+				// slide x or y 
+				if ((collision_x_or_y == 2 && last_collision != 1) || (collision_x_or_y == 1 && last_collision == 2)) // collision in y-axis so move only in x-direction
+				{
+					last_collision = 2;
+					remain = glm::vec4(remain_copy.x, 0.0f, 0.0f, 0.0f); // only move in x-axis
+				}
+				else// if ((collision_x_or_y == 1 && last_collision != 2) || (collision_x_or_y == 2 && last_collision == 1)) // collision in x-axis so move in y-direction
+				{
+					last_collision = 1;
+					remain = glm::vec4(0.0f, remain_copy.y, 0.0f, 0.0f); // only move in y-axis
+				}
+				step_in_mesh(remain);
+				step_in_3D(temp_pos, temp_rot);
+				temp_pos.z = temp_pos.z + z_relative;
+
+			}
+
+			// on platform but no collision with the obstacle, enable falling
+			if (on_platform && obstacle_box == &p && !Collision::testCollision(p, player_box) && (!sliding || !Collision::testCollisionXY(p, player_box))) {
+				in_air = true;
+				on_platform = false;
+				obstacle_box = nullptr;
+			}
+		}
+		if (!collision)
+		{
+			last_collision = 0; // if there was no collision, clear variable (used for sliding motion)
+		}
+		/*else {
+			if (Collision::testCollision(*obstacle_box, player_box)) {
+				player.at = before;
+				reset_pos = true;
+			}
+		}*/
+
+		// there was no collision, update player's transform
+		if (!reset_pos) {
+			player.transform->position = temp_pos;
+			player.transform->rotation = temp_rot;
+		}
+		else {
+			player.transform->position.z = temp_pos.z;
+		}
+
+		// set shadow pos
+		shadow->position.x = player.transform->position.x;
+		shadow->position.y = player.transform->position.y;
+		Collision::AABB* tmp = nullptr;
+		for (Collision::AABB& p : obstacles) {
+			if (Collision::testCollisionXYStrict(p, player_box) && p.r.z + p.c.z <= player.transform->position.z) {
+				if (tmp == nullptr) {
+					tmp = &p;
+				}
+				else {
+					if (p.r.z + p.c.z >= tmp->c.z + tmp->r.z) {
+						tmp = &p;
+					}
+				}
+			}
+		}
+		if (tmp != nullptr) {
+			shadow->position.z = tmp->c.z + tmp->r.z + shadow_base_height;
+		}
+		else {
+			shadow->position.z = shadow_base_height;
+		}
+
+		bool in_range = false;
+		// play a message depending on your position
+		for (int i = 0; i < (int)messages.size(); i++)
+		{
+			// check if in range of something
+			glm::vec3 diff = player.transform->position - messages[i].first;
+			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f))
+			{
+				in_range = true;
+				// if not already there
+				if (i != idx_message)
+				{
+					idx_message = i;
+				}
+			}
+		}
+		if (!in_range)
+		{
+			idx_message = -1;
+		}
+
+		// check if in range of something
+		if (cur_objective + 1 < (int)objectives.size() - 2) {
+			glm::vec3 diff = player.transform->position - objectives[cur_objective + 1].first;
+			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 2.0f))
+			{
+				cur_objective++;
+			}
+		}
+		else if (cur_objective == 2 && ingredients_collected == 15) {
+			cur_objective++;
+		}
+
+		// reset locations (crosses)
+		for (auto it = reset_locations.begin(); it != reset_locations.end(); it++)
+		{
+			Collision::AABB& box = *it;
+			if (testCollisionXY(box, player_box))
+			{
+				if (std::abs(box.c.z - (player_box.c.z - player_box.r.z)) < 0.5f)
+				{
+					switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+					return;
+				}
+			}
+
+		}
+
+		//reset button press counters:
+		left.downs = 0;
+		right.downs = 0;
+		up.downs = 0;
+		down.downs = 0;
+
+		// shark chasing
+		if (chasing)
+		{
+			// shark AI logic: keep it simple. 
+			// shark tries to move in direction of octopus, if collides, goes straight, if collides, goes up
+			glm::vec3 shark_pos = shark->position;
+			glm::vec3 init_shark_pos = shark->position;
+
+			// difference from nose of shark
+			glm::vec3 diff = temp_pos - (shark_pos + glm::vec3(0.0f, shark_box.r.y, -shark_box.r.z / 2.0f));
+			shark_pos += glm::normalize(diff) * shark_chasing_speed * elapsed;
+			shark_box.c = shark_pos;
+			shark_box.c.z += shark_box.r.z; // coordinate frame at the bottom of the shark
+			if (glm::length(diff) < 0.2f)
+			{
+				switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+				return;
+			}
+			//else
+			{
+				// try to go in direction of octopus
+				for (Collision::AABB& p : obstacles)
+				{
+					if (Collision::testCollision(p, shark_box))
+					{
+						// go up instead
+						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, shark_chasing_speed * elapsed);
+						break;
+					}
+				}
+				// update transform
+				shark->position = shark_pos;
+				shark_box.c = shark_pos;
+			}
+		}
+	}
 
 	update_camera();
 
@@ -959,7 +1302,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS); //this is the default depth comparison function, but FYI you can change it.
 
-	{
+	//if (game_state != FINAL) {
 		//set up light positions (bone program):
 		glUseProgram(bone_vertex_color_program->program);
 
@@ -971,7 +1314,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		glUniform3fv(bone_vertex_color_program->sky_direction_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, 1.0f)));
 
 		glUseProgram(0);
-	}
+	//}
 
 	scene.draw(*player.camera);
 
@@ -1224,6 +1567,16 @@ void PlayMode::add_cinematic_edges(float x, float y) {
 	textbox.emplace_back(glm::vec3(x, -1.0f + cinematic_edge_width * 0.2f, 0.0f), color, glm::vec2(0.5f, 0.5f));
 }
 
+void PlayMode::push_tutorial_level1_messages() {
+	// create some message objects. hardcoded for now
+	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
+	messages.emplace_back(std::make_pair(glm::vec3(-8.5f, -46.0f, 5.0f), "Hold left shift to crawl. Scroll mousewheel to zoom camera."));
+	messages.emplace_back(std::make_pair(glm::vec3(-1.0f, -46.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
+	messages.emplace_back(std::make_pair(glm::vec3(7.0f, -47.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
+	messages.emplace_back(std::make_pair(glm::vec3(-9.0f, -46.0f, 0.0f), "Hint: You can't actually climb the bookshelf. Go around."));
+	messages.emplace_back(std::make_pair(glm::vec3(-14.0f, -6.85f, 0.0f), "Slide under the door to exit."));
+}
+
 void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh const * cur_walkmesh) {
 	// reset operations
 	obstacle_box = nullptr;
@@ -1235,19 +1588,37 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	collectable_transforms.clear();
 	collectable_boxes.clear();
 	player_animations.clear();
+	messages.clear();
 	player_drawable = nullptr;
 	pitch = 0.25;
 	yaw = -float(M_PI)/2.0f;
 	z_relative = 0.0f;
 
+	//TODO TAKE THIS OUT FOR THE FINAL RELEASE, IT CAN BREAK THE GAME
+	if (cur_walkmesh == walkmesh_chasef) {
+		game_state = FINAL;
+	}
+	else if (cur_walkmesh == walkmesh_chase1) {
+		game_state = SHARKSCENE;
+	}
+	else if (cur_walkmesh == walkmesh_tutorial_level1) {
+		game_state = PROLOGUE;
+	}
 	scene = cur_scene;
 	std::string str_collectable("i_");
 	//create transforms:
 	for (auto& transform : scene.transforms) {
 	// player transforms
-		if (transform.name == "PlayerRig") player.transform = &transform;
-		if (transform.name == "PlayerShadow") shadow = &transform;
-		if (transform.name == "Shark") shark = &transform;
+		if (game_state == FINAL) {
+			if (transform.name == "PlayerMounted") player.transform = &transform;
+			if (transform.name == "PlayerMountedShadow") shadow = &transform;
+			if (transform.name == "Robot") shark = &transform;
+		}
+		else {
+			if (transform.name == "PlayerRig") player.transform = &transform;
+			if (transform.name == "PlayerShadow") shadow = &transform;
+			if (transform.name == "Shark") shark = &transform;
+		}
 
 		// add collectable transforms 
 		if (transform.name.find(str_collectable) != std::string::npos)
@@ -1255,10 +1626,14 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 			collectable_transforms.insert(std::pair<std::string, Scene::Transform*>(transform.name, &transform));
 		}
 	}
+	if (player.transform == nullptr) throw std::runtime_error("GameObject player not found.");
+	if (shadow == nullptr) throw std::runtime_error("GameObject shadow not found.");
+	if (shark == nullptr && cur_walkmesh != walkmesh_chasef) throw std::runtime_error("GameObject shark not found.");
+	
+	if (cur_walkmesh == walkmesh_tutorial_level1) {
+		push_tutorial_level1_messages();
+	}
 
-	if (player.transform == nullptr) throw std::runtime_error("GameObject not found.");
-	if (shadow == nullptr) throw std::runtime_error("GameObject not found.");
-	if (shark == nullptr) throw std::runtime_error("GameObject not found.");
 	shadow->position = glm::vec3(player.transform->position.x, player.transform->position.y, shadow->position.z);
 	shadow_base_height = shadow->position.z;
 
@@ -1329,33 +1704,35 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 
 	player_height_default = player.transform->scale.z;
 
-	player_animations.reserve(3);
+	if (game_state != FINAL) {
+		player_animations.reserve(3);
 
-	for (auto& drawable : scene.drawables) {
-		if (drawable.transform->name == "Player") {
-			player_drawable = &drawable;
-			player_animations.emplace_back(*level1_banims, *player_anim_jump, BoneAnimationPlayer::Once);
-			player_animations.back().position = 0.0f;
-			player_animations.emplace_back(*level1_banims, *player_anim_walk, BoneAnimationPlayer::Once);
-			player_animations.back().position = 1.0f;
-			player_animations.emplace_back(*level1_banims, *player_anim_climb, BoneAnimationPlayer::Once);
-			player_animations.back().position = 0.0f;
-			drawable.pipeline.program = bone_vertex_color_program->program;
-			drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
-			drawable.pipeline.type = level1_banims->mesh.type;
-			drawable.pipeline.start = level1_banims->mesh.start;
-			drawable.pipeline.count = level1_banims->mesh.count;
-			drawable.pipeline.OBJECT_TO_CLIP_mat4 = bone_vertex_color_program->object_to_clip_mat4;
-			//drawable.pipeline.OBJECT_TO_CLIP_mat4 = lit_color_texture_program_pipeline.OBJECT_TO_CLIP_mat4;
-			drawable.pipeline.OBJECT_TO_LIGHT_mat4x3 = bone_vertex_color_program->object_to_light_mat4x3;
-			drawable.pipeline.NORMAL_TO_LIGHT_mat3 = bone_vertex_color_program->normal_to_light_mat3;
+		for (auto& drawable : scene.drawables) {
+			if (drawable.transform->name == "Player") {
+				player_drawable = &drawable;
+				player_animations.emplace_back(*level1_banims, *player_anim_jump, BoneAnimationPlayer::Once);
+				player_animations.back().position = 0.0f;
+				player_animations.emplace_back(*level1_banims, *player_anim_walk, BoneAnimationPlayer::Once);
+				player_animations.back().position = 1.0f;
+				player_animations.emplace_back(*level1_banims, *player_anim_climb, BoneAnimationPlayer::Once);
+				player_animations.back().position = 0.0f;
+				drawable.pipeline.program = bone_vertex_color_program->program;
+				drawable.pipeline.vao = *level1_banims_for_bone_vertex_color_program;
+				drawable.pipeline.type = level1_banims->mesh.type;
+				drawable.pipeline.start = level1_banims->mesh.start;
+				drawable.pipeline.count = level1_banims->mesh.count;
+				drawable.pipeline.OBJECT_TO_CLIP_mat4 = bone_vertex_color_program->object_to_clip_mat4;
+				//drawable.pipeline.OBJECT_TO_CLIP_mat4 = lit_color_texture_program_pipeline.OBJECT_TO_CLIP_mat4;
+				drawable.pipeline.OBJECT_TO_LIGHT_mat4x3 = bone_vertex_color_program->object_to_light_mat4x3;
+				drawable.pipeline.NORMAL_TO_LIGHT_mat3 = bone_vertex_color_program->normal_to_light_mat3;
 
-			BoneAnimationPlayer* anim_player = &player_animations.back();
-			drawable.pipeline.set_uniforms = [anim_player]() {
-				anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
-			};
+				BoneAnimationPlayer* anim_player = &player_animations.back();
+				drawable.pipeline.set_uniforms = [anim_player]() {
+					anim_player->set_uniform(bone_vertex_color_program->bones_mat4x3_array);
+				};
 
-			
+
+			}
 		}
 	}
 
