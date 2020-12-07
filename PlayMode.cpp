@@ -51,7 +51,7 @@ Load< Scene > phonebank_scene(LoadTagDefault, []() -> Scene const * {
 	});
 });
 Load< Scene > chase1_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("chase1_test.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+	return new Scene(data_path("chase1.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
 		Mesh const &mesh = chase1_meshes->lookup(mesh_name);
 
 		scene.drawables.emplace_back(transform);
@@ -75,7 +75,7 @@ Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const
 	return ret;
 });
 Load< WalkMeshes > chase1_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
-	WalkMeshes *ret = new WalkMeshes(data_path("chase1_test.w"));
+	WalkMeshes *ret = new WalkMeshes(data_path("chase1.w"));
 	walkmesh_chase1 = &ret->lookup("WalkMesh.001");
 	return ret;
 });
