@@ -25,6 +25,7 @@ struct PlayMode : Mode {
 	void add_to_textbox(glm::vec2 center, glm::vec2 radius);
 	void draw_textbox(float aspect);
 	void add_cinematic_edges(float x, float y);
+	void push_tutorial_level1_messages();
 
 	// scene switching function that changes from one level to another
 	void switch_scene(Scene& scene, MeshBuffer& mesh, WalkMesh const * walkmesh);
@@ -97,6 +98,7 @@ struct PlayMode : Mode {
 	bool chasing = false;
 	float cinematic_edge_width = 0.0f;
 
+
 	//player info:
 	struct Player {
 		WalkPoint at;
@@ -142,7 +144,7 @@ struct PlayMode : Mode {
 	enum Action_State { a_PAUSED, a_GROUND, a_JUMPING, a_PLATFORM, a_SLIDING, a_LAUNCHING, a_IN_AIR, a_CLIMBING};
 	Action_State action_state = a_GROUND;
 
-	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, PARKOUR};
+	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, PARKOUR, FINAL};
 	Game_State game_state = PROLOGUE;
 
 	bool prologue = true;
