@@ -10,6 +10,15 @@ all : \
     $(DIST)/chase1.pnct \
     $(DIST)/chase1.scene \
     $(DIST)/chase1.w \
+    $(DIST)/level2.pnct \
+    $(DIST)/level2.scene \
+    $(DIST)/level2.w \
+    $(DIST)/level3.pnct \
+    $(DIST)/level3.scene \
+    $(DIST)/level3.w \
+    $(DIST)/chase1.pnct \
+    $(DIST)/chase1.scene \
+    $(DIST)/chase1.w \
     $(DIST)/chasef.pnct \
     $(DIST)/chasef.scene \
     $(DIST)/chasef.w
@@ -43,4 +52,22 @@ $(DIST)/chasef.pnct : chase_final.blend export-meshes.py
     $(BLENDER) --background --python export-meshes.py -- "chase_final.blend:Platforms" "$(DIST)/chasef.pnct" 
 
 $(DIST)/chasef.w : chase_final.blend export-walkmeshes.py
-    $(BLENDER) --background --python export-walkmeshes.py -- "chase_final.blend:WalkMeshes" "$(DIST)/chasef.w" 
+    $(BLENDER) --background --python export-walkmeshes.py -- "chase_final.blend:WalkMeshes" "$(DIST)/chasef.w"
+
+$(DIST)/level2.scene : level2.blend export-scene.py
+    $(BLENDER) --background --python export-scene.py -- "level2.blend:Platforms" "$(DIST)/level2.scene"
+
+$(DIST)/level2.pnct : level2.blend export-meshes.py
+    $(BLENDER) --background --python export-meshes.py -- "level2.blend:Platforms" "$(DIST)/level2.pnct" 
+
+$(DIST)/level2.w : level2.blend export-walkmeshes.py
+    $(BLENDER) --background --python export-walkmeshes.py -- "level2.blend:WalkMeshes" "$(DIST)/level2.w" 
+
+$(DIST)/level3.scene : level3.blend export-scene.py
+    $(BLENDER) --background --python export-scene.py -- "level3.blend:Platforms" "$(DIST)/level3.scene"
+
+$(DIST)/level3.pnct : level3.blend export-meshes.py
+    $(BLENDER) --background --python export-meshes.py -- "level3.blend:Platforms" "$(DIST)/level3.pnct" 
+
+$(DIST)/level3.w : level3.blend export-walkmeshes.py
+    $(BLENDER) --background --python export-walkmeshes.py -- "level.blend:WalkMeshes" "$(DIST)/level3.w" 

@@ -87,7 +87,6 @@ struct PlayMode : Mode {
 	float yaw = -float(M_PI)/2.0f;
 	float pitch = 0.25f;
 	glm::vec3 look_offset = glm::vec3(0.0f, 0.0f, 0.8f);
-	void interpolate_views(int view1, int view2, float time);
 	enum views {PLAYER, SHARK_TANK, START_ROOM1, START_ROOM2, HALLWAY, DINING_ROOM, KITCHEN, SHARK_APPROACH,
 		GROCERY_STORE1, GROCERY_STORE2, ENTRANCE_TO_KITCHEN, KITCHEN1, KITCHEN2, FIANCE, SHARK};
 
@@ -189,5 +188,6 @@ struct PlayMode : Mode {
 	Scene::Transform* fiance = nullptr;
 	float shark_timer = 0;
 	float shark_chasing_speed = 1.5f;
+	float robot_chasing_speed = 3.0f;
 	Collision::AABB shark_box;
 };
