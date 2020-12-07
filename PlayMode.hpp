@@ -48,8 +48,10 @@ struct PlayMode : Mode {
 	float gravity = 30.0f;
 	float jump_up_velocity = 0.0f;
 	float max_fall_speed = -12.0f;
+	float mounted_max_fall_speed = -25.0f;
 	float jump_speed = 13.0f;
 	float z_relative = 0.0f;
+	float mounted_jump_speed = 25.0f;
 	Collision::AABB *obstacle_box = nullptr;
 	Collision::AABB *platform_box = nullptr;
 
