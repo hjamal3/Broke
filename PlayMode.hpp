@@ -191,6 +191,6 @@ struct PlayMode : Mode {
 	Scene::Transform* fiance = nullptr;
 	float shark_timer = 0;
 	float shark_chasing_speed = 1.5f;
-	float robot_chasing_speed = 3.0f;
+	float robot_chasing_speed = 8.0f;
 	Collision::AABB shark_box;
 };

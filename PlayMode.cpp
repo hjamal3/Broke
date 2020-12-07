@@ -799,7 +799,7 @@ void PlayMode::update(float elapsed) {
 			if (jump_move != glm::vec2(0.0f))
 			{
 				// if you are jumping and want to slow down
-				if (jump_move.y > 0 && jump_move.x == 0 && move.y < 0 && move.x == 0)
+				if (jump_move.y > 0 && jump_move.x == 0 && move.y < 0 && move.x == 0 && jump_PlayerSpeed > 0.0f)
 				{
 					jump_PlayerSpeed -= 0.5f;
 				}
@@ -1196,7 +1196,7 @@ void PlayMode::update(float elapsed) {
 
 				// difference from nose of shark
 				glm::vec3 diff = temp_pos - (shark_pos + glm::vec3(0.0f, shark_box.r.y, -shark_box.r.z / 2.0f));
-				shark_pos += glm::normalize(diff) * shark_chasing_speed * elapsed;
+				shark_pos += glm::normalize(diff) * robot_chasing_speed * elapsed;
 				shark_box.c = shark_pos;
 				shark_box.c.z += shark_box.r.z; // coordinate frame at the bottom of the shark
 				if (glm::length(diff) < 0.2f)
@@ -1213,7 +1213,7 @@ void PlayMode::update(float elapsed) {
 						{
 							// go up instead
 							// std::cout << "col" << std::endl;
-							shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, shark_chasing_speed * elapsed);
+							shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, robot_chasing_speed * elapsed);
 							break;
 						}
 					}
@@ -1230,7 +1230,7 @@ void PlayMode::update(float elapsed) {
 
 				// difference from nose of shark
 				glm::vec3 diff = temp_pos - (shark_pos + glm::vec3(0.0f, shark_box.r.y, -shark_box.r.z / 2.0f));
-				shark_pos += glm::normalize(diff) * shark_chasing_speed * elapsed;
+				shark_pos += glm::normalize(diff) * robot_chasing_speed * elapsed;
 				shark_box.c = shark_pos;
 				shark_box.c.z += shark_box.r.z; // coordinate frame at the bottom of the shark
 				if (glm::length(diff) < 0.2f)
@@ -1392,7 +1392,6 @@ void PlayMode::update(float elapsed) {
 		// check if the new position leads to a collision
 		// create player bounding box
 		float player_height = 2.0f;
-		if (sliding) player_height = 0.15f;
 		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.5f,0.75f,player_height });
 		player_box.c.z += player_box.r.z - 0.001f; // hardcode z-offset because in blender frame is at bottom
 		bool reset_pos = false;
@@ -1533,9 +1532,9 @@ void PlayMode::update(float elapsed) {
 			Collision::AABB& box = *it;
 			if (testCollisionXY(box, player_box))
 			{
-				if (std::abs(box.c.z - (player_box.c.z - player_box.r.z)) < 0.5f)
+				if (std::abs(box.c.z + box.r.z - (player_box.c.z - player_box.r.z)) < 0.5f)
 				{
-					switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+					switch_scene((Scene&)*chasef_scene, (MeshBuffer&)*chasef_meshes, walkmesh_chasef);
 					return;
 				}
 			}
@@ -1558,12 +1557,12 @@ void PlayMode::update(float elapsed) {
 
 			// difference from nose of shark
 			glm::vec3 diff = temp_pos - (shark_pos + glm::vec3(0.0f, shark_box.r.y, -shark_box.r.z / 2.0f));
-			shark_pos += glm::normalize(diff) * shark_chasing_speed * elapsed;
+			shark_pos += glm::normalize(diff) * robot_chasing_speed * elapsed;
 			shark_box.c = shark_pos;
 			shark_box.c.z += shark_box.r.z; // coordinate frame at the bottom of the shark
-			if (glm::length(diff) < 0.2f)
+			if (glm::length(diff) < 1.0f)
 			{
-				switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+				switch_scene((Scene&)*chasef_scene, (MeshBuffer&)*chasef_meshes, walkmesh_chasef);
 				return;
 			}
 			//else
@@ -1574,7 +1573,7 @@ void PlayMode::update(float elapsed) {
 					if (Collision::testCollision(p, shark_box))
 					{
 						// go up instead
-						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, shark_chasing_speed * elapsed);
+						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, robot_chasing_speed * elapsed);
 						break;
 					}
 				}
@@ -1614,7 +1613,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS); //this is the default depth comparison function, but FYI you can change it.
 
-	//if (game_state != FINAL) {
+	if (game_state != FINAL) {
 		//set up light positions (bone program):
 		glUseProgram(bone_vertex_color_program->program);
 
@@ -1626,7 +1625,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		glUniform3fv(bone_vertex_color_program->sky_direction_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, 1.0f)));
 
 		glUseProgram(0);
-	//}
+	}
 
 	scene.draw(*player.camera);
 
@@ -1971,13 +1970,14 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	z_relative = 0.0f;
 
 	//TODO TAKE THIS OUT FOR THE FINAL RELEASE, IT CAN BREAK THE GAME
-	/*if (cur_walkmesh == walkmesh_chasef) {
+	if (cur_walkmesh == walkmesh_chasef) {
 		game_state = FINAL;
+		chasing = true;
 	}
 	else if (cur_walkmesh == walkmesh_chase1) {
 		game_state = SHARKSCENE;
 	}
-	else if (cur_walkmesh == walkmesh_tutorial_level1) {
+	/*else if (cur_walkmesh == walkmesh_tutorial_level1) {
 		game_state = PROLOGUE;
 	}*/
 	scene = cur_scene;
