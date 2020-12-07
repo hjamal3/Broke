@@ -20,6 +20,8 @@
 
 GLuint phonebank_meshes_for_lit_color_texture_program = 0;
 GLuint chase1_meshes_for_lit_color_texture_program = 0;
+GLuint level2_meshes_for_lit_color_texture_program = 0;
+GLuint level3_meshes_for_lit_color_texture_program = 0;
 GLuint vertex_buffer_for_color_texture_program = 0;
 GLuint vertex_buffer = 0;
 GLuint white_tex = 0;
@@ -31,6 +33,16 @@ Load< MeshBuffer > phonebank_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 Load< MeshBuffer > chase1_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 	MeshBuffer const *ret = new MeshBuffer(data_path("chase1_test.pnct"));
 	chase1_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+});
+Load< MeshBuffer > level2_meshes(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("level2.pnct"));
+	level2_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+});
+Load< MeshBuffer > level3_meshes(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("level3.pnct"));
+	level3_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
@@ -66,9 +78,43 @@ Load< Scene > chase1_scene(LoadTagDefault, []() -> Scene const * {
 
 	});
 });
+Load< Scene > level2_scene(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("level2.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = level2_meshes->lookup(mesh_name);
+
+		scene.drawables.emplace_back(transform);
+		Scene::Drawable &drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = level2_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+
+	});
+});
+Load< Scene > level3_scene(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("level3.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = level3_meshes->lookup(mesh_name);
+
+		scene.drawables.emplace_back(transform);
+		Scene::Drawable &drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = level3_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+
+	});
+});
 
 WalkMesh const *walkmesh_tutorial_level1 = nullptr;
 WalkMesh const *walkmesh_chase1 = nullptr;
+WalkMesh const *walkmesh_level2 = nullptr;
+WalkMesh const *walkmesh_level3 = nullptr;
 Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
 	WalkMeshes *ret = new WalkMeshes(data_path("level1.w"));
 	walkmesh_tutorial_level1 = &ret->lookup("WalkMesh");
@@ -77,6 +123,16 @@ Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const
 Load< WalkMeshes > chase1_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
 	WalkMeshes *ret = new WalkMeshes(data_path("chase1_test.w"));
 	walkmesh_chase1 = &ret->lookup("WalkMesh.001");
+	return ret;
+});
+Load< WalkMeshes> level2_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
+	WalkMeshes *ret = new WalkMeshes(data_path("level2.w"));
+	walkmesh_level2 = &ret->lookup("Plane.025");
+	return ret;
+});
+Load< WalkMeshes> level3_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
+	WalkMeshes *ret = new WalkMeshes(data_path("level3.w"));
+	walkmesh_level3 = &ret->lookup("Plane.001");
 	return ret;
 });
 
@@ -308,10 +364,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			//// to go back to the player
 			//view_scene = views::PLAYER;
 			// game_state = SHARKSCENE;
-			if (walkmesh == walkmesh_chase1) {
+			// switch_scene((Scene &) *level2_scene, (MeshBuffer &) *level2_meshes, walkmesh_level2);
+			if (walkmesh == walkmesh_level3) {
 				switch_scene((Scene &) *phonebank_scene, (MeshBuffer &) *phonebank_meshes, walkmesh_tutorial_level1);
 			} else {
-				switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
+				switch_scene((Scene &) *level3_scene, (MeshBuffer &) *level3_meshes, walkmesh_level3);
 			}
 			return true;
 		}
@@ -597,7 +654,6 @@ void PlayMode::update(float elapsed) {
 
 		// WalkPoint before moving, used to reset if collisions
 		WalkPoint before = player.at;
-
 		// step in walkmesh.
 		step_in_mesh(remain);
 
@@ -730,7 +786,7 @@ void PlayMode::update(float elapsed) {
 			}
 			if (!collision)
 			{
-last_collision = 0; // if there was no collision, clear variable (used for sliding motion)
+				last_collision = 0; // if there was no collision, clear variable (used for sliding motion)
 			}
 		}
 		else {
