@@ -25,6 +25,7 @@ struct PlayMode : Mode {
 	void add_to_textbox(glm::vec2 center, glm::vec2 radius);
 	void draw_textbox(float aspect);
 	void add_cinematic_edges(float x, float y);
+	void add_black_screen(float x, float y);
 
 	// scene switching function that changes from one level to another
 	void switch_scene(Scene& scene, MeshBuffer& mesh, WalkMesh const * walkmesh);
@@ -82,7 +83,8 @@ struct PlayMode : Mode {
 	float pitch = 0.25f;
 	glm::vec3 look_offset = glm::vec3(0.0f, 0.0f, 0.8f);
 	void interpolate_views(int view1, int view2, float time);
-	enum views {PLAYER, SHARK_TANK, START_ROOM1, START_ROOM2, HALLWAY, DINING_ROOM, KITCHEN, SHARK_APPROACH};
+	enum views {PLAYER, SHARK_TANK, START_ROOM1, START_ROOM2, HALLWAY, DINING_ROOM, KITCHEN, SHARK_APPROACH,
+		GROCERY_STORE1, GROCERY_STORE2, ENTRANCE_TO_KITCHEN, KITCHEN1, KITCHEN2};
 
 	//game related states
 	int ingredients_collected = 0;
@@ -94,8 +96,10 @@ struct PlayMode : Mode {
 	WalkMesh const * walkmesh = nullptr;
 	// when cutscenes are loaded
 	bool cinematic = false;
+	bool black_screen = false;
 	bool chasing = false;
 	float cinematic_edge_width = 0.0f;
+	float black_screen_timer = 0.0f;
 
 	//player info:
 	struct Player {
@@ -142,13 +146,22 @@ struct PlayMode : Mode {
 	enum Action_State { a_PAUSED, a_GROUND, a_JUMPING, a_PLATFORM, a_SLIDING, a_LAUNCHING, a_IN_AIR, a_CLIMBING};
 	Action_State action_state = a_GROUND;
 
-	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, PARKOUR};
+	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, PARKOUR, INTERLUDE, NOTE, SHORT_INTERLUDE, LAST_INTERLUDE};
 	Game_State game_state = PROLOGUE;
 
 	bool prologue = true;
 	int prologue_message = 0;
-	int cur_objective = 0;
 	std::vector<std::string> prologue_messages;
+
+	bool interlude = false;
+	int interlude_message = 0;
+	std::vector<std::string> interlude_messages;
+
+	bool note = false;
+	int note_message = 0;
+	std::vector<std::string> note_messages;
+
+	int cur_objective = 0;
 
 	std::vector< Vertex > textbox;
 

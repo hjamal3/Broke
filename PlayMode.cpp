@@ -286,6 +286,8 @@ PlayMode::PlayMode() {
 	messages.emplace_back(std::make_pair(glm::vec3(7.0f, -47.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
 	messages.emplace_back(std::make_pair(glm::vec3(-9.0f, -46.0f, 0.0f), "Hint: You can't actually climb the bookshelf. Go around."));
 	messages.emplace_back(std::make_pair(glm::vec3(-14.0f, -6.85f, 0.0f), "Slide under the door to exit."));
+	messages.emplace_back(std::make_pair(glm::vec3(-13.1299f, -48.455f, 1.34215f), "PRESS R TO READ NOTE!"));
+	messages.emplace_back(std::make_pair(glm::vec3(-20.7894f, -18.2492f, 0.0f), "Slide under the door to PALACE OF UMAMI."));
 
 	// intialize the prologue introductory texts
 	prologue_messages.push_back("I'm a broke octopus./Press Space to Continue");
@@ -304,11 +306,32 @@ PlayMode::PlayMode() {
 	prologue_messages.push_back("They all point me towards one answer...");
 	prologue_messages.push_back("Humans.");
 
+	interlude_messages.push_back("What the heck was with that shark?");
+	interlude_messages.push_back("So hungry that it's walking on land?");
+	interlude_messages.push_back("And I heard it shout something too...");
+	interlude_messages.push_back("Most likely villain rubbish!");
+	interlude_messages.push_back("'I'm gonna eat you dead octopus!'");
+	interlude_messages.push_back("I'm no octopus. I'm a hexapus!");
+	interlude_messages.push_back("Ok, seems like there are treasures too!");
+	interlude_messages.push_back("My dear! Wait for me! Almost there!");
+
+	note_messages.push_back("\"My dear, if you are seeing this");
+	note_messages.push_back("\"Then you are not far away from me");
+	note_messages.push_back("\"Once you collect all the treasures in the PALACE OF UMAMI");
+	note_messages.push_back("\"We shall reunite");
+	note_messages.push_back("\"You can slide into the palace through the door behind the cashier");
+	note_messages.push_back("\"I miss you so much. Yours\"");
+	note_messages.push_back("That's definitely my dear! It's written in hexapish!");
+
 	objectives.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Explore around!"));
 	objectives.emplace_back(std::make_pair(glm::vec3(-8.52156f, -46.2738f, 4.80875f), "Find a way into the restaurant."));
 	objectives.emplace_back(std::make_pair(glm::vec3(20.8374f, -40.9954f, 4.83061f), "Collect the treasures mentioned in Fiance's note."));
 	objectives.emplace_back(std::make_pair(glm::vec3(-14.7522f, -6.78037f, 0.0f), "Get out of the restaurant through the door!"));
 	objectives.emplace_back(std::make_pair(glm::vec3(-14.211f, -6.77151f, 0.0f), "PARKOUR YOUR WAY FROM THE SHARK!!!"));
+	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Collect more treasures in Fiance's note."));
+	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Find a clue as to what to do next."));
+	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Slide into Palace of Umami."));
+	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Collect the last of the treasures in Fiance's note."));
 
 	// camera position, target position
 	//cut_scenes.reserve(10);
@@ -319,6 +342,11 @@ PlayMode::PlayMode() {
 	cut_scenes.insert(std::make_pair(views::HALLWAY, std::make_pair(glm::vec3(27.0f, -48.0f, 11.0f), glm::vec3(-4.2f, -48.0f, 0.0f))));
 	cut_scenes.insert(std::make_pair(views::KITCHEN, std::make_pair(glm::vec3(23.0f, -18.0f, 15.0f), glm::vec3(-6.0f, -25.0f, 6.0f))));
 	cut_scenes.insert(std::make_pair(views::SHARK_APPROACH, std::make_pair(glm::vec3(-3.0f, -72.0f, 2.0f), glm::vec3(-4.0f, -72.0f, 2.0f))));
+	cut_scenes.insert(std::make_pair(views::GROCERY_STORE1, std::make_pair(glm::vec3(-5.3575f, -31.885f, 10.283f), glm::vec3(-8.8858f, -49.129f, 2.7989f))));
+	cut_scenes.insert(std::make_pair(views::GROCERY_STORE2, std::make_pair(glm::vec3(-5.3575f, -44.117f, 8.1707f), glm::vec3(-22.191f, -18.3f, 5.0618f))));
+	cut_scenes.insert(std::make_pair(views::ENTRANCE_TO_KITCHEN, std::make_pair(glm::vec3(-6.54617f, -19.0744f, 4.12952f), glm::vec3(-22.191f, -18.3f, 5.0618f))));
+	cut_scenes.insert(std::make_pair(views::KITCHEN1, std::make_pair(glm::vec3(-50.961f, -20.622f, 5.6419f), glm::vec3(-51.321f, -44.734f, 5.3182f))));
+	cut_scenes.insert(std::make_pair(views::KITCHEN2, std::make_pair(glm::vec3(-47.968f, -26.271f, 8.4767f), glm::vec3(-60.492f, -6.4324f, 0.70067f))));
 }
 
 PlayMode::~PlayMode() {
@@ -365,17 +393,28 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			//view_scene = views::PLAYER;
 			// game_state = SHARKSCENE;
 			// switch_scene((Scene &) *level2_scene, (MeshBuffer &) *level2_meshes, walkmesh_level2);
-			if (walkmesh == walkmesh_level3) {
+			if (walkmesh == walkmesh_level2) {
 				switch_scene((Scene &) *phonebank_scene, (MeshBuffer &) *phonebank_meshes, walkmesh_tutorial_level1);
 			} else {
-				switch_scene((Scene &) *level3_scene, (MeshBuffer &) *level3_meshes, walkmesh_level3);
+				switch_scene((Scene &) *level2_scene, (MeshBuffer &) *level2_meshes, walkmesh_level2);
 			}
 			return true;
+		}
+		else if (evt.key.keysym.sym == SDLK_r) {
+			if (idx_message == 6) {
+				game_state = NOTE;
+				note = true;
+			}
 		}
 		else if (evt.key.keysym.sym == SDLK_SPACE) {
 			if (game_state == PROLOGUE) {
 				prologue_message += 1;
-
+			}
+			else if (game_state == INTERLUDE) {
+				interlude_message += 1;
+			}
+			else if (game_state == NOTE) {
+				note_message += 1;
 			}
 			else if (game_state == CUTSCENE)
 			{
@@ -463,10 +502,46 @@ void PlayMode::update(float elapsed) {
 		if (((uint32_t) prologue_message) < prologue_messages.size()) return;
 		game_state = CUTSCENE;
 		view_scene = 1;
-	} 
+	}
+	else if (game_state == INTERLUDE) {
+		// blackscreen for a while
+		if (black_screen) {
+			black_screen_timer += elapsed;
+			if (black_screen_timer > 2.0f) {
+				black_screen = false;
+				black_screen_timer = 0.0f;
+			}
+		} else {
+			if (((uint32_t) interlude_message) < interlude_messages.size()) return;
+			game_state = CUTSCENE;
+			view_scene = views::GROCERY_STORE1;
+		}
+	}
+	else if (game_state == SHORT_INTERLUDE) {
+		if (black_screen) {
+			black_screen_timer += elapsed;
+			if (black_screen_timer > 2.0f) {
+				black_screen = false;
+				black_screen_timer = 0.0f;
+			}
+		} else {
+			switch_scene((Scene &) *level3_scene, (MeshBuffer &) *level3_meshes, walkmesh_level3);
+			game_state = CUTSCENE;
+			ingredients_collected = 0;
+			view_scene = views::KITCHEN1;
+		}
+	}
+	else if (game_state == NOTE) {
+		if (((uint32_t) note_message) < note_messages.size()) return;
+		game_state = CUTSCENE;
+		view_scene = views::ENTRANCE_TO_KITCHEN;
+		cur_objective++;
+	}
 	else if (game_state == CUTSCENE)
 	{
-		if (view_scene == 6)
+		if ((view_scene == 6 && walkmesh == walkmesh_tutorial_level1) ||
+			(view_scene == 11 && walkmesh == walkmesh_level2) ||
+			(view_scene == 13 && walkmesh == walkmesh_level3))
 		{
 			view_scene = views::PLAYER;
 			game_state = PLAY;
@@ -559,13 +634,24 @@ void PlayMode::update(float elapsed) {
 		if (slide.pressed && !sliding) {
 			sliding = true;
 			player.transform->scale.z = 0.6f * player_height_default;
-			// hardcoded door position to play shark scene
 			if (cur_objective == 3) {
+				// hardcoded door position to play shark scene
 				glm::vec3 diff = player.transform->position - glm::vec3(-14.211f, -6.77151f, 0.0f);
 				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 3.0f) {
 					game_state = SHARKSCENE;
 					view_scene = views::SHARK_TANK;
 					cinematic = true;
+					cur_objective++;
+					return;
+				}
+			}
+
+			if (cur_objective == 7) {
+				// hardcoded door position to enter level3
+				glm::vec3 diff = player.transform->position - glm::vec3(-20.7894f, -18.2492f, 0.0f);
+				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 3.0f) {
+					game_state = SHORT_INTERLUDE;
+					black_screen = true;
 					cur_objective++;
 					return;
 				}
@@ -828,29 +914,62 @@ void PlayMode::update(float elapsed) {
 			shadow->position.z = shadow_base_height;
 		}
 
-		bool in_range = false;
-		// play a message depending on your position
-		for (int i = 0; i < (int)messages.size(); i++)
-		{
-			// check if in range of something
-			glm::vec3 diff = player.transform->position - messages[i].first;
-			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f))
+		if (walkmesh == walkmesh_tutorial_level1) {
+			bool in_range = false;
+			// play a message depending on your position
+			for (int i = 0; i < 6; i++)
 			{
-				in_range = true;
-				// if not already there
-				if (i != idx_message)
+				// check if in range of something
+				glm::vec3 diff = player.transform->position - messages[i].first;
+				if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f))
 				{
-					idx_message = i;
+					in_range = true;
+					// if not already there
+					if (i != idx_message)
+					{
+						idx_message = i;
+					}
 				}
 			}
-		}
-		if (!in_range)
-		{
+			if (!in_range)
+			{
+				idx_message = -1;
+			}
+		} else if (walkmesh == walkmesh_level2) {
+			if (cur_objective == 6) {
+				// Hardcoded position check for note
+				glm::vec3 diff = player.transform->position - messages[6].first;
+				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f)
+				{
+					idx_message = 6;
+				} else {
+					idx_message = -1;
+				}
+			} else if (cur_objective == 7)
+			{
+				bool in_range = false;
+				for (int i = 6; i <= 7; i++)
+				{
+					glm::vec3 diff = player.transform->position - messages[i].first;
+					if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f)
+					{
+						idx_message = i;
+						in_range = true;
+					}
+				}
+				if (!in_range) {
+					idx_message = -1;
+				}
+			} else
+			{
+				idx_message = -1;
+			}
+		} else {
 			idx_message = -1;
 		}
 
 		// check if in range of something
-		if (cur_objective + 1 < (int)objectives.size() - 2) {
+		if (cur_objective < 2) {
 			glm::vec3 diff = player.transform->position - objectives[cur_objective + 1].first;
 			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 2.0f))
 			{
@@ -860,9 +979,12 @@ void PlayMode::update(float elapsed) {
 		else if (cur_objective == 2 && ingredients_collected == 15) {
 			cur_objective++;
 		}
-		// else if (cur_objective + 1 == (int) objectives.size() - 1) {
-			// need to check whether all necessary treasures have been collected
-		// }
+		else if (cur_objective == 5 && ingredients_collected == 10) {
+			cur_objective++;
+		}
+		else if (cur_objective == 8 && ingredients_collected == 20) {
+			game_state = LAST_INTERLUDE;
+		}
 
 		// collectables checking
 		for (auto it = collectable_boxes.begin(); it != collectable_boxes.end(); it++)
@@ -887,7 +1009,7 @@ void PlayMode::update(float elapsed) {
 			{
 				if (std::abs(box.c.z - (player_box.c.z - player_box.r.z)) < 2.0f)
 				{
-					switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+					switch_scene((Scene &)*chase1_scene, (MeshBuffer &)*chase1_meshes, walkmesh_chase1);
 				}
 			}
 
@@ -944,6 +1066,21 @@ void PlayMode::update(float elapsed) {
 		// shark chasing
 		if (chasing)
 		{
+			if (cur_objective == 4) {
+				// hardcoded end of parkour position to enter level 2
+				glm::vec3 diff = player.transform->position - glm::vec3(-17.9889f, 19.0369f, 4.99887f);
+				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 8.0f) {
+					game_state = INTERLUDE;
+					view_scene = 0;
+					black_screen = true;
+					chasing = false;
+					switch_scene((Scene&)*level2_scene, (MeshBuffer&)*level2_meshes, walkmesh_level2);
+					ingredients_collected = 0;
+					cur_objective++;
+					return;
+				}
+			}
+
 			// shark AI logic: keep it simple. 
 			// shark tries to move in direction of octopus, if collides, goes straight, if collides, goes up
 			glm::vec3 shark_pos = shark->position;
@@ -955,7 +1092,7 @@ void PlayMode::update(float elapsed) {
 			shark_box.c = shark_pos;
 			if (glm::length(diff) < 0.2f)
 			{
-				//switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+				switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
 			}
 			else
 			{
@@ -965,7 +1102,7 @@ void PlayMode::update(float elapsed) {
 					if (Collision::testCollision(p, shark_box))
 					{
 						// go up instead
-						std::cout << "col" << std::endl;
+						// std::cout << "col" << std::endl;
 						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, shark_chasing_speed * elapsed);
 						break;
 					}
@@ -1036,6 +1173,11 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			draw_textbox(aspect);
 			return;
 		}
+		if (black_screen) {
+			add_black_screen(float(drawable_size.x), float(drawable_size.y));
+			draw_textbox(aspect);
+			return;
+		}
 		DrawLines lines(glm::mat4(
 			1.0f / aspect, 0.0f, 0.0f, 0.0f,
 			0.0f, 1.0f, 0.0f, 0.0f,
@@ -1044,10 +1186,16 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 
-		std::string draw_str = "";// "Mouse motion looks; WASD moves; escape ungrabs mouse. "; // MODIFY THIS FOR ANY DEFAULT STRING
+		std::string draw_str = "";
 		// print message string
 		if (game_state == PROLOGUE) {
 			draw_str += prologue_messages[prologue_message];
+		}
+		else if (game_state == INTERLUDE) {
+			draw_str += interlude_messages[interlude_message];
+		}
+		else if (game_state == NOTE) {
+			draw_str += note_messages[note_message];
 		}
 		else if (game_state == CUTSCENE)
 		{
@@ -1102,6 +1250,30 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 				lines.draw_text("Treasures: " + std::to_string(ingredients_collected) + "/15",
+					glm::vec3(-aspect + 0.1f * H + ofs, 0.7 - 1.1f * H + ofs, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+				add_to_textbox(
+					glm::vec2(-aspect + 0.1f * H, 0.7 - 1.1f * H),
+					glm::vec2(7.0f * H, 1.5f * H));
+			} else if (cur_objective == 5) {
+				lines.draw_text("Treasures: " + std::to_string(ingredients_collected) + "/20",
+					glm::vec3(-aspect + 0.1f * H, 0.7 - 1.1f * H, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+				lines.draw_text("Treasures: " + std::to_string(ingredients_collected) + "/20",
+					glm::vec3(-aspect + 0.1f * H + ofs, 0.7 - 1.1f * H + ofs, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+				add_to_textbox(
+					glm::vec2(-aspect + 0.1f * H, 0.7 - 1.1f * H),
+					glm::vec2(7.0f * H, 1.5f * H));
+			} else if (cur_objective == 8) {
+				lines.draw_text("Treasures: " + std::to_string(ingredients_collected) + "/20",
+					glm::vec3(-aspect + 0.1f * H, 0.7 - 1.1f * H, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+				lines.draw_text("Treasures: " + std::to_string(ingredients_collected) + "/20",
 					glm::vec3(-aspect + 0.1f * H + ofs, 0.7 - 1.1f * H + ofs, 0.0),
 					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 					glm::u8vec4(0xff, 0xff, 0xff, 0x00));
@@ -1276,6 +1448,18 @@ void PlayMode::add_cinematic_edges(float x, float y) {
 	textbox.emplace_back(glm::vec3(x, -1.0f + cinematic_edge_width * 0.2f, 0.0f), color, glm::vec2(0.5f, 0.5f));
 }
 
+void PlayMode::add_black_screen(float x, float y) {
+	auto color = glm::u8vec4(0,0,0,255);
+
+	textbox.emplace_back(glm::vec3(-x, 1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(-x, -1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(x, 1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+
+	textbox.emplace_back(glm::vec3(-x, -1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(x, -1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+	textbox.emplace_back(glm::vec3(x, 1.0f, 0.0f), color, glm::vec2(0.5f, 0.5f));
+}
+
 void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh const * cur_walkmesh) {
 	// reset operations
 	obstacle_box = nullptr;
@@ -1287,6 +1471,7 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	collectable_transforms.clear();
 	collectable_boxes.clear();
 	player_animations.clear();
+	reset_locations.clear();
 	player_drawable = nullptr;
 	pitch = 0.25;
 	yaw = -float(M_PI)/2.0f;
