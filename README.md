@@ -23,8 +23,18 @@ The jumping and landing sounds were sampled from https://freesound.org/people/ky
 Item collection sounds were sampled from https://freesound.org/people/djlprojects/sounds/413629/ under the Attribution license.
 
 Background music:
+
 Acid Trumpet by Kevin MacLeod
-Attribution 4.0 International License
+Link: https://incompetech.filmmusic.io/song/3340-acid-trumpet
+License: http://creativecommons.org/licenses/by/4.0/
+
+Wretched Destroyer by Kevin MacLeod
+Link: https://incompetech.filmmusic.io/song/5017-wretched-destroyer
+License: http://creativecommons.org/licenses/by/4.0/
+
+Raving Energy (faster) by Kevin MacLeod
+Link: https://incompetech.filmmusic.io/song/5030-raving-energy-faster-
+License: http://creativecommons.org/licenses/by/4.0/
 
 This game was built with [NEST](NEST.md).
 
