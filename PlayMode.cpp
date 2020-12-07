@@ -1593,11 +1593,12 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	yaw = -float(M_PI)/2.0f;
 	z_relative = 0.0f;
 
+	//TODO TAKE THIS OUT FOR THE FINAL RELEASE, IT CAN BREAK THE GAME
 	if (cur_walkmesh == walkmesh_chasef) {
 		game_state = FINAL;
 	}
 	else if (cur_walkmesh == walkmesh_chase1) {
-		game_state = PLAY;
+		game_state = SHARKSCENE;
 	}
 	else if (cur_walkmesh == walkmesh_tutorial_level1) {
 		game_state = PROLOGUE;
