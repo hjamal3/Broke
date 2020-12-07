@@ -1060,10 +1060,10 @@ void PlayMode::update(float elapsed) {
 		else if (cur_objective == 2 && ingredients_collected == 15) {
 			cur_objective++;
 		}
-		else if (cur_objective == 5 && ingredients_collected == 10) {
+		else if (cur_objective == 5 && ingredients_collected == 20) {
 			cur_objective++;
 		}
-		else if (cur_objective == 8 && ingredients_collected == 5) {
+		else if (cur_objective == 8 && ingredients_collected == 20) {
 			game_state = LAST_INTERLUDE;
 			view_scene = views::FIANCE;
 			cur_objective++;
