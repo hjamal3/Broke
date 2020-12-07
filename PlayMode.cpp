@@ -1600,16 +1600,16 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	//create transforms:
 	for (auto& transform : scene.transforms) {
 	// player transforms
-		if (game_state == FINAL) {
+		/*if (game_state == FINAL) {
 			if (transform.name == "PlayerMounted") player.transform = &transform;
 			if (transform.name == "PlayerMountedShadow") shadow = &transform;
 			if (transform.name == "Robot") shark = &transform;
 		}
-		else {
+		else {*/
 			if (transform.name == "PlayerRig") player.transform = &transform;
 			if (transform.name == "PlayerShadow") shadow = &transform;
 			if (transform.name == "Shark") shark = &transform;
-		}
+		//}
 
 		// add collectable transforms 
 		if (transform.name.find(str_collectable) != std::string::npos)
@@ -1695,7 +1695,7 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 
 	player_height_default = player.transform->scale.z;
 
-	if (game_state != FINAL) {
+	if (true) {//game_state != FINAL) {
 		player_animations.reserve(3);
 
 		for (auto& drawable : scene.drawables) {
