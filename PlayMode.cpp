@@ -628,17 +628,18 @@ void PlayMode::update(float elapsed) {
 				}
 			}
 			else {
-				assert(obstacle_box != nullptr);
-				z_relative += elapsed * climb_speed;
-				float platform_height = obstacle_box->c.z + obstacle_box->r.z;
-				if (z_relative > platform_height) {
-					// climb on top!
-					z_relative = platform_height;
-					climbing = false;
-					on_platform = true;
-					in_air = false;
-					jump_up_velocity = 0.0f;
-					jumping = false;
+				if (obstacle_box != nullptr) {
+					z_relative += elapsed * climb_speed;
+					float platform_height = obstacle_box->c.z + obstacle_box->r.z;
+					if (z_relative > platform_height) {
+						// climb on top!
+						z_relative = platform_height;
+						climbing = false;
+						on_platform = true;
+						in_air = false;
+						jump_up_velocity = 0.0f;
+						jumping = false;
+					}
 				}
 			}
 		}
