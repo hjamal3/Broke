@@ -26,6 +26,9 @@ struct PlayMode : Mode {
 	void draw_textbox(float aspect);
 	void add_cinematic_edges(float x, float y);
 	void add_black_screen(float x, float y);
+	void push_tutorial_level1_messages();
+	void push_level2_messages();
+	bool shark_indices();
 
 	// scene switching function that changes from one level to another
 	void switch_scene(Scene& scene, MeshBuffer& mesh, WalkMesh const * walkmesh);
@@ -48,8 +51,10 @@ struct PlayMode : Mode {
 	float gravity = 30.0f;
 	float jump_up_velocity = 0.0f;
 	float max_fall_speed = -12.0f;
+	float mounted_max_fall_speed = -25.0f;
 	float jump_speed = 13.0f;
 	float z_relative = 0.0f;
+	float mounted_jump_speed = 25.0f;
 	Collision::AABB *obstacle_box = nullptr;
 	Collision::AABB *platform_box = nullptr;
 
@@ -84,7 +89,7 @@ struct PlayMode : Mode {
 	glm::vec3 look_offset = glm::vec3(0.0f, 0.0f, 0.8f);
 	void interpolate_views(int view1, int view2, float time);
 	enum views {PLAYER, SHARK_TANK, START_ROOM1, START_ROOM2, HALLWAY, DINING_ROOM, KITCHEN, SHARK_APPROACH,
-		GROCERY_STORE1, GROCERY_STORE2, ENTRANCE_TO_KITCHEN, KITCHEN1, KITCHEN2};
+		GROCERY_STORE1, GROCERY_STORE2, ENTRANCE_TO_KITCHEN, KITCHEN1, KITCHEN2, FIANCE, SHARK};
 
 	//game related states
 	int ingredients_collected = 0;
@@ -100,6 +105,7 @@ struct PlayMode : Mode {
 	bool chasing = false;
 	float cinematic_edge_width = 0.0f;
 	float black_screen_timer = 0.0f;
+
 
 	//player info:
 	struct Player {
@@ -146,7 +152,7 @@ struct PlayMode : Mode {
 	enum Action_State { a_PAUSED, a_GROUND, a_JUMPING, a_PLATFORM, a_SLIDING, a_LAUNCHING, a_IN_AIR, a_CLIMBING};
 	Action_State action_state = a_GROUND;
 
-	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, PARKOUR, INTERLUDE, NOTE, SHORT_INTERLUDE, LAST_INTERLUDE};
+	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, PARKOUR, INTERLUDE, NOTE, SHORT_INTERLUDE, LAST_INTERLUDE, FINAL};
 	Game_State game_state = PROLOGUE;
 
 	bool prologue = true;
@@ -160,6 +166,11 @@ struct PlayMode : Mode {
 	bool note = false;
 	int note_message = 0;
 	std::vector<std::string> note_messages;
+
+	bool revelation = false;
+	int revelation_message = 0;
+	std::vector<std::string> revelation_messages;
+	float revelation_timer = 0.0f;
 
 	int cur_objective = 0;
 
@@ -175,7 +186,8 @@ struct PlayMode : Mode {
 
 	// shark variables
 	Scene::Transform* shark = nullptr;
+	Scene::Transform* fiance = nullptr;
 	float shark_timer = 0;
-	float shark_chasing_speed = 2.0f;
+	float shark_chasing_speed = 1.5f;
 	Collision::AABB shark_box;
 };
