@@ -70,4 +70,4 @@ $(DIST)/level3.pnct : level3.blend export-meshes.py
     $(BLENDER) --background --python export-meshes.py -- "level3.blend:Platforms" "$(DIST)/level3.pnct" 
 
 $(DIST)/level3.w : level3.blend export-walkmeshes.py
-    $(BLENDER) --background --python export-walkmeshes.py -- "level.blend:WalkMeshes" "$(DIST)/level3.w" 
+    $(BLENDER) --background --python export-walkmeshes.py -- "level3.blend:WalkMeshes" "$(DIST)/level3.w" 
