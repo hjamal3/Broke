@@ -191,6 +191,10 @@ Load< Sound::Sample > collect_sample(LoadTagDefault, []() -> Sound::Sample const
 	return new Sound::Sample(data_path("collect.wav"));
 });
 
+Load< Sound::Sample > jazz_sample(LoadTagDefault, []() -> Sound::Sample const* {
+	return new Sound::Sample(data_path("acid-trumpet-kevin-macleod.wav"));
+});
+
 
 void PlayMode::update_camera() {
 	if (!view_scene)
@@ -315,12 +319,12 @@ PlayMode::PlayMode() {
 	prologue_messages.push_back("I thought that was it. But one day, she was gone.");
 	prologue_messages.push_back("Left me a note that goes as below:");
 	prologue_messages.push_back("\"I need you to collect something for me.");
-	prologue_messages.push_back("\"I'm not an ordinary octopus.");
+	prologue_messages.push_back("\"I'm not an ordinary hexapus.");
 	prologue_messages.push_back("\"OCEAN STARDUST, CONSCIENCE OF COAL, SEALED NARCISSUS, and HYDROSOI");
-	prologue_messages.push_back("\"These I will need to maintain the normal look of an octopus.");
+	prologue_messages.push_back("\"These I will need to maintain the normal look of an hexapus.");
 	prologue_messages.push_back("\"Sorry I've been lying to you all this time.");
 	prologue_messages.push_back("\"Will you do this for me?\"");
-	prologue_messages.push_back("I'm a BROKE octopus with none of the treasures she mentioned.");
+	prologue_messages.push_back("I'm a broke hexapus with none of the treasures she mentioned.");
 	prologue_messages.push_back("I paid visits to the sages. I inquired the sperm whale clairvoyant.");
 	prologue_messages.push_back("They all point me towards one answer...");
 	prologue_messages.push_back("Humans.");
@@ -329,10 +333,10 @@ PlayMode::PlayMode() {
 	interlude_messages.push_back("So hungry that it's walking on land?");
 	interlude_messages.push_back("And I heard it shout something too...");
 	interlude_messages.push_back("Most likely villain rubbish!");
-	interlude_messages.push_back("'I'm gonna eat you dead octopus!'");
+	interlude_messages.push_back("Like 'I'm gonna eat you dead octopus!'");
 	interlude_messages.push_back("I'm no octopus. I'm a hexapus!");
-	interlude_messages.push_back("Ok, seems like there are treasures too!");
-	interlude_messages.push_back("My dear! Wait for me! Almost there!");
+	interlude_messages.push_back("Ok, seems like there are treasures here too!");
+	interlude_messages.push_back("My dear! Wait for me! I am almost there!");
 
 	note_messages.push_back("\"My dear, if you are seeing this");
 	note_messages.push_back("\"Then you are not far away from me");
@@ -345,11 +349,11 @@ PlayMode::PlayMode() {
 	// hexapus 0-2
 	revelation_messages.push_back("Oh my goodness! That's my dear!");
 	revelation_messages.push_back("Is this what you mean by 'not ordinary'?");
-	revelation_messages.push_back("You look perfect every way!");
+	revelation_messages.push_back("You look perfect anyway!");
 	// shark 3-14
-	revelation_messages.push_back("No you fool!");
+	revelation_messages.push_back("No, you fool!");
 	// hexapus
-	revelation_messages.push_back("What the...? Let's run babe! This shark is too dangerous!");
+	revelation_messages.push_back("The shark again?? Let's run babe! This shark is too dangerous!");
 	// shark
 	revelation_messages.push_back("No! Listen to me!");
 	revelation_messages.push_back("That IS your Fiance!");
@@ -380,7 +384,7 @@ PlayMode::PlayMode() {
 	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Find a clue as to what to do next."));
 	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Slide into Palace of Umami."));
 	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Collect the last of the treasures in Fiance's note."));
-	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "PARKOUR YOUR WAY FROM THE CMU ROBOT!!!!!!"));
+	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "PARKOUR UP THE TWO TOWERS TO ESCAPE THE CMU ROBOT!!"));
 
 	// camera position, target position
 	//cut_scenes.reserve(10);
@@ -391,6 +395,7 @@ PlayMode::PlayMode() {
 	cut_scenes.insert(std::make_pair(views::HALLWAY, std::make_pair(glm::vec3(27.0f, -48.0f, 11.0f), glm::vec3(-4.2f, -48.0f, 0.0f))));
 	cut_scenes.insert(std::make_pair(views::KITCHEN, std::make_pair(glm::vec3(23.0f, -18.0f, 15.0f), glm::vec3(-6.0f, -25.0f, 6.0f))));
 	cut_scenes.insert(std::make_pair(views::SHARK_APPROACH, std::make_pair(glm::vec3(-3.0f, -72.0f, 2.0f), glm::vec3(-4.0f, -72.0f, 2.0f))));
+
 	cut_scenes.insert(std::make_pair(views::GROCERY_STORE1, std::make_pair(glm::vec3(-5.3575f, -31.885f, 10.283f), glm::vec3(-8.8858f, -49.129f, 2.7989f))));
 	cut_scenes.insert(std::make_pair(views::GROCERY_STORE2, std::make_pair(glm::vec3(-5.3575f, -44.117f, 8.1707f), glm::vec3(-22.191f, -18.3f, 5.0618f))));
 	cut_scenes.insert(std::make_pair(views::ENTRANCE_TO_KITCHEN, std::make_pair(glm::vec3(-6.54617f, -19.0744f, 4.12952f), glm::vec3(-22.191f, -18.3f, 5.0618f))));
@@ -398,6 +403,8 @@ PlayMode::PlayMode() {
 	cut_scenes.insert(std::make_pair(views::KITCHEN2, std::make_pair(glm::vec3(-47.968f, -26.271f, 8.4767f), glm::vec3(-60.492f, -6.4324f, 0.70067f))));
 	cut_scenes.insert(std::make_pair(views::FIANCE, std::make_pair(glm::vec3(-53.581f, -34.064f, 3.1391f), glm::vec3(-53.836f, -45.34f, 7.1291f))));
 	cut_scenes.insert(std::make_pair(views::SHARK, std::make_pair(glm::vec3(-47.813f, -16.175f, 0.52755f), glm::vec3(-39.6076f, -18.624f, 0.0f))));
+
+	background_loop = Sound::loop(*jazz_sample, 0.35f, 0.0f);
 }
 
 PlayMode::~PlayMode() {
@@ -792,7 +799,7 @@ void PlayMode::update(float elapsed) {
 			if (jump_move != glm::vec2(0.0f))
 			{
 				// if you are jumping and want to slow down
-				if (jump_move.y > 0 && jump_move.x == 0 && move.y < 0 && move.x == 0)
+				if (jump_move.y > 0 && jump_move.x == 0 && move.y < 0 && move.x == 0 && jump_PlayerSpeed > 0.0f)
 				{
 					jump_PlayerSpeed -= 0.5f;
 				}
@@ -912,15 +919,24 @@ void PlayMode::update(float elapsed) {
 							// - Player is sufficiently close to the edge of the platform vertically
 							// - Jump key has been released from the previous press
 							if (z_relative < obstacle_height) {
-								if (obstacle_height - z_relative < 0.5f || /* on-ground climb */
-									obstacle_height - z_relative < 2.0f) { /* in-air climb */
-									if (jump.pressed && released) {
-										climbing = true;
-										obstacle_box = &p;
-										jumping = false;
+								bool barrier = false;
+								for (Collision::AABB& b : barriers) {
+									if (b.c == p.c && b.r == p.r) {
+										barrier = true;
+										break;
 									}
-									else {
-										can_climb = true;
+								}
+								if (!barrier) {
+									if (obstacle_height - z_relative < 0.5f || /* on-ground climb */
+										obstacle_height - z_relative < 2.0f) { /* in-air climb */
+										if (jump.pressed && released) {
+											climbing = true;
+											obstacle_box = &p;
+											jumping = false;
+										}
+										else {
+											can_climb = true;
+										}
 									}
 								}
 							}
@@ -1180,7 +1196,7 @@ void PlayMode::update(float elapsed) {
 
 				// difference from nose of shark
 				glm::vec3 diff = temp_pos - (shark_pos + glm::vec3(0.0f, shark_box.r.y, -shark_box.r.z / 2.0f));
-				shark_pos += glm::normalize(diff) * shark_chasing_speed * elapsed;
+				shark_pos += glm::normalize(diff) * robot_chasing_speed * elapsed;
 				shark_box.c = shark_pos;
 				shark_box.c.z += shark_box.r.z; // coordinate frame at the bottom of the shark
 				if (glm::length(diff) < 0.2f)
@@ -1197,7 +1213,7 @@ void PlayMode::update(float elapsed) {
 						{
 							// go up instead
 							// std::cout << "col" << std::endl;
-							shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, shark_chasing_speed * elapsed);
+							shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, robot_chasing_speed * elapsed);
 							break;
 						}
 					}
@@ -1214,7 +1230,7 @@ void PlayMode::update(float elapsed) {
 
 				// difference from nose of shark
 				glm::vec3 diff = temp_pos - (shark_pos + glm::vec3(0.0f, shark_box.r.y, -shark_box.r.z / 2.0f));
-				shark_pos += glm::normalize(diff) * shark_chasing_speed * elapsed;
+				shark_pos += glm::normalize(diff) * robot_chasing_speed * elapsed;
 				shark_box.c = shark_pos;
 				shark_box.c.z += shark_box.r.z; // coordinate frame at the bottom of the shark
 				if (glm::length(diff) < 0.2f)
@@ -1376,7 +1392,6 @@ void PlayMode::update(float elapsed) {
 		// check if the new position leads to a collision
 		// create player bounding box
 		float player_height = 2.0f;
-		if (sliding) player_height = 0.15f;
 		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.5f,0.75f,player_height });
 		player_box.c.z += player_box.r.z - 0.001f; // hardcode z-offset because in blender frame is at bottom
 		bool reset_pos = false;
@@ -1517,9 +1532,9 @@ void PlayMode::update(float elapsed) {
 			Collision::AABB& box = *it;
 			if (testCollisionXY(box, player_box))
 			{
-				if (std::abs(box.c.z - (player_box.c.z - player_box.r.z)) < 0.5f)
+				if (std::abs(box.c.z + box.r.z - (player_box.c.z - player_box.r.z)) < 0.5f)
 				{
-					switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+					switch_scene((Scene&)*chasef_scene, (MeshBuffer&)*chasef_meshes, walkmesh_chasef);
 					return;
 				}
 			}
@@ -1542,12 +1557,12 @@ void PlayMode::update(float elapsed) {
 
 			// difference from nose of shark
 			glm::vec3 diff = temp_pos - (shark_pos + glm::vec3(0.0f, shark_box.r.y, -shark_box.r.z / 2.0f));
-			shark_pos += glm::normalize(diff) * shark_chasing_speed * elapsed;
+			shark_pos += glm::normalize(diff) * robot_chasing_speed * elapsed;
 			shark_box.c = shark_pos;
 			shark_box.c.z += shark_box.r.z; // coordinate frame at the bottom of the shark
-			if (glm::length(diff) < 0.2f)
+			if (glm::length(diff) < 1.0f)
 			{
-				switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
+				switch_scene((Scene&)*chasef_scene, (MeshBuffer&)*chasef_meshes, walkmesh_chasef);
 				return;
 			}
 			//else
@@ -1558,7 +1573,7 @@ void PlayMode::update(float elapsed) {
 					if (Collision::testCollision(p, shark_box))
 					{
 						// go up instead
-						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, shark_chasing_speed * elapsed);
+						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, robot_chasing_speed * elapsed);
 						break;
 					}
 				}
@@ -1598,7 +1613,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS); //this is the default depth comparison function, but FYI you can change it.
 
-	//if (game_state != FINAL) {
+	if (game_state != FINAL) {
 		//set up light positions (bone program):
 		glUseProgram(bone_vertex_color_program->program);
 
@@ -1610,7 +1625,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		glUniform3fv(bone_vertex_color_program->sky_direction_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, 1.0f)));
 
 		glUseProgram(0);
-	//}
+	}
 
 	scene.draw(*player.camera);
 
@@ -1926,6 +1941,11 @@ void PlayMode::push_tutorial_level1_messages() {
 	messages.emplace_back(std::make_pair(glm::vec3(-14.0f, -6.85f, 0.0f), "Slide under the door to exit."));
 }
 
+void PlayMode::push_chasef_messages() {
+	// create some message objects. hardcoded for now
+	messages.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Press space to jump. You can slow down in the air by holding the opposite direction."));
+}
+
 void PlayMode::push_level2_messages() {
 	messages.emplace_back(std::make_pair(glm::vec3(-13.1299f, -48.455f, 1.34215f), "PRESS R TO READ NOTE!"));
 	messages.emplace_back(std::make_pair(glm::vec3(-20.7894f, -18.2492f, 0.0f), "Slide under the door to PALACE OF UMAMI."));
@@ -1950,13 +1970,14 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	z_relative = 0.0f;
 
 	//TODO TAKE THIS OUT FOR THE FINAL RELEASE, IT CAN BREAK THE GAME
-	/*if (cur_walkmesh == walkmesh_chasef) {
+	if (cur_walkmesh == walkmesh_chasef) {
 		game_state = FINAL;
+		chasing = true;
 	}
 	else if (cur_walkmesh == walkmesh_chase1) {
 		game_state = SHARKSCENE;
 	}
-	else if (cur_walkmesh == walkmesh_tutorial_level1) {
+	/*else if (cur_walkmesh == walkmesh_tutorial_level1) {
 		game_state = PROLOGUE;
 	}*/
 	scene = cur_scene;
@@ -1990,6 +2011,9 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	} else if (cur_walkmesh == walkmesh_level2) {
 		push_level2_messages();
 	}
+	else if (cur_walkmesh == walkmesh_chasef) {
+		push_chasef_messages();
+	}
 
 	shadow->position = glm::vec3(player.transform->position.x, player.transform->position.y, shadow->position.z);
 	shadow_base_height = shadow->position.z;
@@ -2016,6 +2040,7 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 			glm::vec3 rad = 0.5f * (max - min);
 			Collision::AABB box = Collision::AABB(center, rad);
 			obstacles.emplace_back(box);
+			barriers.emplace_back(box);
 		}
 		else if (mesh.first.find(str_collectable) != std::string::npos)
 		{

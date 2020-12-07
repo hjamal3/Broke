@@ -28,6 +28,7 @@ struct PlayMode : Mode {
 	void add_black_screen(float x, float y);
 	void push_tutorial_level1_messages();
 	void push_level2_messages();
+	void push_chasef_messages();
 	bool shark_indices();
 
 	// scene switching function that changes from one level to another
@@ -132,6 +133,7 @@ struct PlayMode : Mode {
 
 	// primitives info
 	std::vector<Collision::AABB> obstacles;
+	std::vector<Collision::AABB> barriers;
 	std::vector<Collision::AABB> reset_locations;
 	std::map<std::string, Scene::Transform*> collectable_transforms;
 	std::map<std::string, Collision::AABB> collectable_boxes;
@@ -182,12 +184,13 @@ struct PlayMode : Mode {
 	std::shared_ptr< Sound::PlayingSample > jump_sound;
 	std::shared_ptr< Sound::PlayingSample > land_sound;
 	std::shared_ptr< Sound::PlayingSample > collect_sound;
+	std::shared_ptr< Sound::PlayingSample > background_loop;
 
 	// shark variables
 	Scene::Transform* shark = nullptr;
 	Scene::Transform* fiance = nullptr;
 	float shark_timer = 0;
 	float shark_chasing_speed = 1.5f;
-	float robot_chasing_speed = 3.0f;
+	float robot_chasing_speed = 8.0f;
 	Collision::AABB shark_box;
 };
