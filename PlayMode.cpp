@@ -137,6 +137,10 @@ Load< Sound::Sample > collect_sample(LoadTagDefault, []() -> Sound::Sample const
 	return new Sound::Sample(data_path("collect.wav"));
 });
 
+Load< Sound::Sample > jazz_sample(LoadTagDefault, []() -> Sound::Sample const* {
+	return new Sound::Sample(data_path("acid-trumpet-kevin-macleod.wav"));
+});
+
 
 void PlayMode::update_camera() {
 	if (!view_scene)
@@ -283,6 +287,8 @@ PlayMode::PlayMode() {
 	cut_scenes.insert(std::make_pair(views::HALLWAY, std::make_pair(glm::vec3(27.0f, -48.0f, 11.0f), glm::vec3(-4.2f, -48.0f, 0.0f))));
 	cut_scenes.insert(std::make_pair(views::KITCHEN, std::make_pair(glm::vec3(23.0f, -18.0f, 15.0f), glm::vec3(-6.0f, -25.0f, 6.0f))));
 	cut_scenes.insert(std::make_pair(views::SHARK_APPROACH, std::make_pair(glm::vec3(-3.0f, -72.0f, 2.0f), glm::vec3(-4.0f, -72.0f, 2.0f))));
+
+	background_loop = Sound::loop(*jazz_sample, 0.35f, 0.0f);
 }
 
 PlayMode::~PlayMode() {
@@ -1577,6 +1583,16 @@ void PlayMode::add_cinematic_edges(float x, float y) {
 }
 
 void PlayMode::push_tutorial_level1_messages() {
+	// create some message objects. hardcoded for now
+	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
+	messages.emplace_back(std::make_pair(glm::vec3(-8.5f, -46.0f, 5.0f), "Hold left shift to crawl. Scroll mousewheel to zoom camera."));
+	messages.emplace_back(std::make_pair(glm::vec3(-1.0f, -46.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
+	messages.emplace_back(std::make_pair(glm::vec3(7.0f, -47.5f, 0.5f), "To climb onto the ledge, hold W while in the air and press space near the ledge."));
+	messages.emplace_back(std::make_pair(glm::vec3(-9.0f, -46.0f, 0.0f), "Hint: You can't actually climb the bookshelf. Go around."));
+	messages.emplace_back(std::make_pair(glm::vec3(-14.0f, -6.85f, 0.0f), "Slide under the door to exit."));
+}
+
+void PlayMode::push_chasef_messages() {
 	// create some message objects. hardcoded for now
 	messages.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Press WASD to move, press space to jump. Mouse motion to rotate.")); // starting coord of player
 	messages.emplace_back(std::make_pair(glm::vec3(-8.5f, -46.0f, 5.0f), "Hold left shift to crawl. Scroll mousewheel to zoom camera."));

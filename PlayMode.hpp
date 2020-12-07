@@ -164,6 +164,7 @@ struct PlayMode : Mode {
 	std::shared_ptr< Sound::PlayingSample > jump_sound;
 	std::shared_ptr< Sound::PlayingSample > land_sound;
 	std::shared_ptr< Sound::PlayingSample > collect_sound;
+	std::shared_ptr< Sound::PlayingSample > background_loop;
 
 	// shark variables
 	Scene::Transform* shark = nullptr;

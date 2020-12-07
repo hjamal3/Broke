@@ -22,5 +22,9 @@ The jumping and landing sounds were sampled from https://freesound.org/people/ky
 
 Item collection sounds were sampled from https://freesound.org/people/djlprojects/sounds/413629/ under the Attribution license.
 
+Background music:
+Acid Trumpet by Kevin MacLeod
+Attribution 4.0 International License
+
 This game was built with [NEST](NEST.md).
 
