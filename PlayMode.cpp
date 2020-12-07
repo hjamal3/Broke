@@ -712,15 +712,24 @@ void PlayMode::update(float elapsed) {
 							// - Player is sufficiently close to the edge of the platform vertically
 							// - Jump key has been released from the previous press
 							if (z_relative < obstacle_height) {
-								if (obstacle_height - z_relative < 0.5f || /* on-ground climb */
-									obstacle_height - z_relative < 2.0f) { /* in-air climb */
-									if (jump.pressed && released) {
-										climbing = true;
-										obstacle_box = &p;
-										jumping = false;
+								bool barrier = false;
+								for (Collision::AABB& b : barriers) {
+									if (b.c == p.c && b.r == p.r) {
+										barrier = true;
+										break;
 									}
-									else {
-										can_climb = true;
+								}
+								if (!barrier) {
+									if (obstacle_height - z_relative < 0.5f || /* on-ground climb */
+										obstacle_height - z_relative < 2.0f) { /* in-air climb */
+										if (jump.pressed && released) {
+											climbing = true;
+											obstacle_box = &p;
+											jumping = false;
+										}
+										else {
+											can_climb = true;
+										}
 									}
 								}
 							}
@@ -1658,8 +1667,8 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 			glm::vec3 center = 0.5f * (min + max);
 			glm::vec3 rad = 0.5f * (max - min);
 			Collision::AABB box = Collision::AABB(center, rad);
-			//box.r.z = 100.0f; // set a big vertical barrier so you can never climb the obstacle
 			obstacles.emplace_back(box);
+			barriers.emplace_back(box);
 		}
 		else if (mesh.first.find(str_collectable) != std::string::npos)
 		{

@@ -127,6 +127,7 @@ struct PlayMode : Mode {
 
 	// primitives info
 	std::vector<Collision::AABB> obstacles;
+	std::vector<Collision::AABB> barriers;
 	std::vector<Collision::AABB> reset_locations;
 	std::map<std::string, Scene::Transform*> collectable_transforms;
 	std::map<std::string, Collision::AABB> collectable_boxes;
