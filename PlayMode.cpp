@@ -666,7 +666,7 @@ void PlayMode::update(float elapsed) {
 			view_scene = views::SHARK_APPROACH;
 			jump_up_velocity = jump_speed;
 			background_loop->stop();
-			background_loop = Sound::loop(*chase_sample, 0.5f, 0.0f);
+			background_loop = Sound::loop(*chase_sample, 0.45f, 0.0f);
 		}
 
 		// 4: Shark approaches player and player jumps and starts parkouring
@@ -1253,10 +1253,10 @@ void PlayMode::update(float elapsed) {
 
 			// difference from nose of shark
 			glm::vec3 diff = temp_pos - (shark_pos + glm::vec3(0.0f, shark_box.r.y, -shark_box.r.z / 2.0f));
-			shark_pos += glm::normalize(diff) * robot_chasing_speed * elapsed;
+			shark_pos += glm::normalize(diff) * shark_chasing_speed * elapsed;
 			shark_box.c = shark_pos;
 			shark_box.c.z += shark_box.r.z; // coordinate frame at the bottom of the shark
-			if (glm::length(diff) < 0.2f)
+			if (glm::length(diff) < 0.3f)
 			{
 				switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
 				return;
@@ -1270,7 +1270,7 @@ void PlayMode::update(float elapsed) {
 					{
 						// go up instead
 						// std::cout << "col" << std::endl;
-						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, robot_chasing_speed * elapsed);
+						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, shark_chasing_speed * elapsed);
 						break;
 					}
 				}
@@ -1999,6 +1999,9 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	pitch = 0.25;
 	yaw = -float(M_PI)/2.0f;
 	z_relative = 0.0f;
+	climbing = false;
+	in_air = false;
+	on_platform = false;
 
 	//TODO TAKE THIS OUT FOR THE FINAL RELEASE, IT CAN BREAK THE GAME
 	/*if (cur_walkmesh == walkmesh_chasef) {
