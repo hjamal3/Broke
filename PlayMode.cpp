@@ -26,6 +26,7 @@ GLuint chasef_meshes_for_lit_color_texture_program = 0;
 GLuint vertex_buffer_for_color_texture_program = 0;
 GLuint vertex_buffer = 0;
 GLuint white_tex = 0;
+
 Load< MeshBuffer > phonebank_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 	MeshBuffer const *ret = new MeshBuffer(data_path("level1.pnct"));
 	phonebank_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
@@ -314,11 +315,6 @@ PlayMode::PlayMode() {
 		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
 	}
 	switch_scene((Scene &) *phonebank_scene, (MeshBuffer &) *phonebank_meshes, walkmesh_tutorial_level1);
-	// switch_scene((Scene &) *level3_scene, (MeshBuffer &) *level3_meshes, walkmesh_level3);
-
-	// create some message objects. hardcoded for now
-	//switch_scene((Scene &) *chase1_scene, (MeshBuffer &) *chase1_meshes, walkmesh_chase1);
-	//switch_scene((Scene&)*chasef_scene, (MeshBuffer&)*chasef_meshes, walkmesh_chasef);
 	
 	// intialize the prologue introductory texts
 	prologue_messages.push_back("I'm a broke hexapus./Press Space to Continue");
@@ -329,7 +325,7 @@ PlayMode::PlayMode() {
 	prologue_messages.push_back("\"I need you to collect something for me.");
 	prologue_messages.push_back("\"I'm not an ordinary hexapus.");
 	prologue_messages.push_back("\"OCEAN STARDUST, CONSCIENCE OF COAL, SEALED NARCISSUS, and HYDROSOI");
-	prologue_messages.push_back("\"These I will need to maintain the normal look of an hexapus.");
+	prologue_messages.push_back("\"These I will need to maintain the normal look of a hexapus.");
 	prologue_messages.push_back("\"Sorry I've been lying to you all this time.");
 	prologue_messages.push_back("\"Will you do this for me?\"");
 	prologue_messages.push_back("I'm a broke hexapus with none of the treasures she mentioned.");
@@ -390,7 +386,7 @@ PlayMode::PlayMode() {
 	end_messages.push_back("Hexapus once said:'I'll never be in love again.'");
 	end_messages.push_back("But who knows? He's got a long way ahead in the deep deep ocean.");
 	end_messages.push_back("You beat the game in: ");
-	end_messages.push_back("THANKS FOR PLAYING!");
+	end_messages.push_back("THANKS FOR PLAYING! Press Space to restart!");
 
 	objectives.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Explore around!"));
 	objectives.emplace_back(std::make_pair(glm::vec3(-8.52156f, -46.2738f, 4.80875f), "Find a way into the restaurant."));
@@ -404,7 +400,6 @@ PlayMode::PlayMode() {
 	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "PARKOUR UP THE TWO TOWERS TO ESCAPE THE CMU ROBOT!!"));
 
 	// camera position, target position
-	//cut_scenes.reserve(10);
 	cut_scenes.insert(std::make_pair(views::SHARK_TANK,std::make_pair(glm::vec3(-12.0f, -35.0, 10.0f), glm::vec3(-16, -29, 3.0f))));
 	cut_scenes.insert(std::make_pair(views::START_ROOM1, std::make_pair(glm::vec3(-9.0f, -27.0, 12.0f), glm::vec3(-18, -40, 0.0f))));
 	cut_scenes.insert(std::make_pair(views::START_ROOM2, std::make_pair(glm::vec3(-23.0f, -49.0, 6.0f), glm::vec3(-13, -36, 0.0f))));
@@ -456,37 +451,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.pressed = true;
 			return true;
 		}
-		else if (evt.key.keysym.sym == SDLK_t) {
-			
-			// to iterate through the cut scenes
-			//view_scene++;
-			//view_scene %= cut_scenes.size()+1;
-			
-			// to set the current scene:
-			//view_scene = views::KITCHEN; // see PlayMode.hpp for other definitions.
-			//// to go back to the player
-			//view_scene = views::PLAYER;
-			// game_state = SHARKSCENE;
-			// switch_scene((Scene &) *level2_scene, (MeshBuffer &) *level2_meshes, walkmesh_level2);
-			/*if (walkmesh == walkmesh_chasef) {
-				switch_scene((Scene&)*phonebank_scene, (MeshBuffer&)*phonebank_meshes, walkmesh_tutorial_level1);
-			} else if (walkmesh == walkmesh_chase1) {
-				switch_scene((Scene &) *chasef_scene, (MeshBuffer &) *chasef_meshes, walkmesh_chasef);
-			}
-			else if (walkmesh == walkmesh_tutorial_level1) {
-				switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
-			}*/
-			 switch_scene((Scene&)*level2_scene, (MeshBuffer&)*level2_meshes, walkmesh_level2);
-			 game_state = NOTE;
-			 cur_objective = 6;
-			//if (game_state == FINAL) {
-			//	game_state = END;
-			//	background_loop->stop();
-			//	background_loop = Sound::loop(*jazz_sample, 0.35f, 0.0f);
-			//	black_screen = true;
-			//}
-			return true;
-		}
 		else if (evt.key.keysym.sym == SDLK_r) {
 			if (idx_message == 0 && cur_objective == 6) {
 				game_state = NOTE;
@@ -523,9 +487,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			if (!slide.pressed) {
 				slide.pressed = true;
 			}
-			return true;
-		} else if (evt.key.keysym.sym == SDLK_TAB) {
-			std::cout << player.transform->position.x << " " << player.transform->position.y << " " << player.transform->position.z << "\n";
 			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
@@ -1019,7 +980,7 @@ void PlayMode::update(float elapsed) {
 							last_collision = 2;
 							remain = glm::vec4(remain_copy.x, 0.0f, 0.0f, 0.0f); // only move in x-axis
 						}
-						else// if ((collision_x_or_y == 1 && last_collision != 2) || (collision_x_or_y == 2 && last_collision == 1)) // collision in x-axis so move in y-direction
+						else
 						{
 							last_collision = 1;
 							remain = glm::vec4(0.0f, remain_copy.y, 0.0f, 0.0f); // only move in y-axis
@@ -1283,7 +1244,6 @@ void PlayMode::update(float elapsed) {
 					if (Collision::testCollision(p, shark_box))
 					{
 						// go up instead
-						// std::cout << "col" << std::endl;
 						shark_pos = init_shark_pos + glm::vec3(0.0f, 0.0f, shark_chasing_speed * elapsed);
 						break;
 					}
@@ -2024,17 +1984,6 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	in_air = false;
 	on_platform = false;
 
-	//TODO TAKE THIS OUT FOR THE FINAL RELEASE, IT CAN BREAK THE GAME
-	/*if (cur_walkmesh == walkmesh_chasef) {
-		game_state = FINAL;
-		chasing = true;
-	}
-	else if (cur_walkmesh == walkmesh_chase1) {
-		game_state = SHARKSCENE;
-	}*/
-	/*else if (cur_walkmesh == walkmesh_tutorial_level1) {
-		game_state = PROLOGUE;
-	}*/
 	scene = cur_scene;
 	std::string str_collectable("i_");
 	//create transforms:
