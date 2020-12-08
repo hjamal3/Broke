@@ -383,6 +383,14 @@ PlayMode::PlayMode() {
 	// shark 19
 	revelation_messages.push_back("What are you waiting for?! Get on my back!");
 
+	end_messages.push_back("Back into the ocean, Hexapus still finds it hard to believe");
+	end_messages.push_back("That his once beloved girlfriend is a robot.");
+	end_messages.push_back("While he becomes depressed day by day");
+	end_messages.push_back("At least he has his new friend land-shark coming by every day");
+	end_messages.push_back("Hexapus once said:'I'll never be in love again.'");
+	end_messages.push_back("But who knows? He's got a long way ahead in the deep deep ocean.");
+	end_messages.push_back("THANKS FOR PLAYING!");
+
 	objectives.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Explore around!"));
 	objectives.emplace_back(std::make_pair(glm::vec3(-8.52156f, -46.2738f, 4.80875f), "Find a way into the restaurant."));
 	objectives.emplace_back(std::make_pair(glm::vec3(20.8374f, -40.9954f, 4.83061f), "Collect the treasures mentioned in Fiance's note."));
@@ -467,9 +475,15 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			else if (walkmesh == walkmesh_tutorial_level1) {
 				switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
 			}*/
-			switch_scene((Scene&)*level2_scene, (MeshBuffer&)*level2_meshes, walkmesh_level2);
-			game_state = NOTE;
-			cur_objective = 6;
+			// switch_scene((Scene&)*level2_scene, (MeshBuffer&)*level2_meshes, walkmesh_level2);
+			// game_state = NOTE;
+			// cur_objective = 6;
+			if (game_state == FINAL) {
+				game_state = END;
+				background_loop->stop();
+				background_loop = Sound::loop(*jazz_sample, 0.35f, 0.0f);
+				black_screen = true;
+			}
 			return true;
 		}
 		else if (evt.key.keysym.sym == SDLK_r) {
@@ -495,6 +509,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			else if (game_state == LAST_INTERLUDE)
 			{
 				revelation_message += 1;
+			}
+			else if (game_state == END)
+			{
+				end_message += 1;
 			}
 			else {
 				jump.pressed = true;
@@ -703,6 +721,10 @@ void PlayMode::update(float elapsed) {
 				view_scene = views::FIANCE;
 			}
 		}	
+	}
+	else if (game_state == END) {
+		if (((uint32_t) end_message) >= end_messages.size()) reset_game();
+		return;
 	}
 	else if (game_state == PLAY)
 	{
@@ -1209,7 +1231,7 @@ void PlayMode::update(float elapsed) {
 		{
 			if (cur_objective == 4) {
 				// hardcoded end of parkour position to enter level 2
-				glm::vec3 diff = player.transform->position - glm::vec3(-17.9889f, 27.0f, 0.0f);
+				glm::vec3 diff = player.transform->position - glm::vec3(-17.9889f, 20.0f, 4.99887f);
 				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 6.0f) {
 					game_state = INTERLUDE;
 					view_scene = 0;
@@ -1539,6 +1561,14 @@ void PlayMode::update(float elapsed) {
 
 		}
 
+		// If into the ocean, play ending script
+		if (player.transform->position.y > 170.0f && player.transform->position.z < 10.0f) {
+			game_state = END;
+			background_loop->stop();
+			background_loop = Sound::loop(*jazz_sample, 0.35f, 0.0f);
+			black_screen = true;
+		}
+
 		//reset button press counters:
 		left.downs = 0;
 		right.downs = 0;
@@ -1639,8 +1669,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		if (black_screen) {
 			add_black_screen(float(drawable_size.x), float(drawable_size.y));
 			draw_textbox(aspect);
-			return;
-		}
+			if (game_state != END) return;
+		} 
 		DrawLines lines(glm::mat4(
 			1.0f / aspect, 0.0f, 0.0f, 0.0f,
 			0.0f, 1.0f, 0.0f, 0.0f,
@@ -1668,6 +1698,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		{
 			draw_str += revelation_messages[revelation_message];
 		}
+		else if (game_state == END) {
+			draw_str += end_messages[end_message];
+		}
 		else if (idx_message != -1)
 		{
 			draw_str += messages[idx_message].second;
@@ -1689,7 +1722,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 		if (!(game_state == PROLOGUE)) {
 			// draw objectives
-			if (game_state != LAST_INTERLUDE) {
+			if (game_state != LAST_INTERLUDE && game_state != END) {
 				lines.draw_text("Objective:",
 					glm::vec3(-aspect + 0.1f * H, 0.95 - 1.1f * H, 0.0),
 					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
@@ -2119,4 +2152,30 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 
 bool PlayMode::shark_indices() {
 	return (revelation_message >= 3 && revelation_message <= 14) || revelation_message == 19;
+}
+
+void PlayMode::reset_game() {
+	switch_scene((Scene &) *phonebank_scene, (MeshBuffer &) *phonebank_meshes, walkmesh_tutorial_level1);
+	game_state = PROLOGUE;
+	cur_objective = 0;
+	ingredients_collected = 0;
+	black_screen = false;
+	chasing = false;
+	
+	prologue = true;
+	prologue_message = 0;
+
+	interlude = false;
+	interlude_message = 0;
+
+	note = false;
+	note_message = 0;
+
+	revelation = false;
+	revelation_message = 0;
+	revelation_timer = 0.0f;
+
+	end_message = 0;
+	view_scene = 0;
+	shark_timer = 0.0f;
 }

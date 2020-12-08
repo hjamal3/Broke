@@ -35,6 +35,7 @@ struct PlayMode : Mode {
 	void switch_scene(Scene& scene, MeshBuffer& mesh, WalkMesh const * walkmesh);
 
 	void reset_sliding();
+	void reset_game();
 
 	//----- game state -----
 
@@ -150,7 +151,7 @@ struct PlayMode : Mode {
 	enum Player_State {PAUSED, STILL, WALK, JUMP, SLIDE, CLIMB};
 	Player_State player_state = PAUSED;
 
-	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, INTERLUDE, NOTE, SHORT_INTERLUDE, LAST_INTERLUDE, FINAL};
+	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, INTERLUDE, NOTE, SHORT_INTERLUDE, LAST_INTERLUDE, FINAL, END};
 	Game_State game_state = PROLOGUE;
 
 	bool prologue = true;
@@ -169,6 +170,9 @@ struct PlayMode : Mode {
 	int revelation_message = 0;
 	std::vector<std::string> revelation_messages;
 	float revelation_timer = 0.0f;
+
+	int end_message = 0;
+	std::vector<std::string> end_messages;
 
 	int cur_objective = 0;
 
