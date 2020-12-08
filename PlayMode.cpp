@@ -475,15 +475,15 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			else if (walkmesh == walkmesh_tutorial_level1) {
 				switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
 			}*/
-			// switch_scene((Scene&)*level2_scene, (MeshBuffer&)*level2_meshes, walkmesh_level2);
-			// game_state = NOTE;
-			// cur_objective = 6;
-			if (game_state == FINAL) {
-				game_state = END;
-				background_loop->stop();
-				background_loop = Sound::loop(*jazz_sample, 0.35f, 0.0f);
-				black_screen = true;
-			}
+			 switch_scene((Scene&)*level2_scene, (MeshBuffer&)*level2_meshes, walkmesh_level2);
+			 game_state = NOTE;
+			 cur_objective = 6;
+			//if (game_state == FINAL) {
+			//	game_state = END;
+			//	background_loop->stop();
+			//	background_loop = Sound::loop(*jazz_sample, 0.35f, 0.0f);
+			//	black_screen = true;
+			//}
 			return true;
 		}
 		else if (evt.key.keysym.sym == SDLK_r) {
@@ -999,17 +999,29 @@ void PlayMode::update(float elapsed) {
 						}
 					}
 					player.at = before; // revert position
-					// if not on a platform and not in the air, you want to slide along the obstacle in direction of no collision
-					// slide x or y 
-					if ((collision_x_or_y == 2 && last_collision != 1) || (collision_x_or_y == 1 && last_collision == 2)) // collision in y-axis so move only in x-direction
+					// if walking over small bump
+					if (std::abs((p.c.z + p.r.z) - (player_box.c.z - player_box.r.z)) < 0.2f
+						&& (p.c.z + p.r.z > (player_box.c.z - player_box.r.z)) && !on_platform && !in_air)
 					{
-						last_collision = 2;
-						remain = glm::vec4(remain_copy.x, 0.0f, 0.0f, 0.0f); // only move in x-axis
+						z_relative = std::abs((p.c.z + p.r.z) - (player_box.c.z - player_box.r.z));
+						remain = glm::vec4(remain_copy.x, remain_copy.y, 0.0f, 0.0f); // only move in x-axis
+						on_platform = true;
+						obstacle_box = &p;
 					}
-					else// if ((collision_x_or_y == 1 && last_collision != 2) || (collision_x_or_y == 2 && last_collision == 1)) // collision in x-axis so move in y-direction
+					else
 					{
-						last_collision = 1;
-						remain = glm::vec4(0.0f, remain_copy.y, 0.0f, 0.0f); // only move in y-axis
+						// if not on a platform and not in the air, you want to slide along the obstacle in direction of no collision
+						// slide x or y 
+						if ((collision_x_or_y == 2 && last_collision != 1) || (collision_x_or_y == 1 && last_collision == 2)) // collision in y-axis so move only in x-direction
+						{
+							last_collision = 2;
+							remain = glm::vec4(remain_copy.x, 0.0f, 0.0f, 0.0f); // only move in x-axis
+						}
+						else// if ((collision_x_or_y == 1 && last_collision != 2) || (collision_x_or_y == 2 && last_collision == 1)) // collision in x-axis so move in y-direction
+						{
+							last_collision = 1;
+							remain = glm::vec4(0.0f, remain_copy.y, 0.0f, 0.0f); // only move in y-axis
+						}
 					}
 					step_in_mesh(remain);
 					step_in_3D(temp_pos, temp_rot);
@@ -1030,10 +1042,10 @@ void PlayMode::update(float elapsed) {
 			}
 		}
 		else {
-		if (Collision::testCollision(*obstacle_box, player_box)) {
-			player.at = before;
-			reset_pos = true;
-		}
+			if (Collision::testCollision(*obstacle_box, player_box)) {
+				player.at = before;
+				reset_pos = true;
+			}
 		}
 
 		// there was no collision, update player's transform
