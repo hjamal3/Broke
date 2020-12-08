@@ -194,4 +194,7 @@ struct PlayMode : Mode {
 	float shark_chasing_speed = 3.5f;
 	float robot_chasing_speed = 8.0f;
 	Collision::AABB shark_box;
+
+	float game_timer = 0.0f;
+	bool game_over = false;
 };

@@ -389,6 +389,7 @@ PlayMode::PlayMode() {
 	end_messages.push_back("At least he has his new friend land-shark coming by every day");
 	end_messages.push_back("Hexapus once said:'I'll never be in love again.'");
 	end_messages.push_back("But who knows? He's got a long way ahead in the deep deep ocean.");
+	end_messages.push_back("You beat the game in: ");
 	end_messages.push_back("THANKS FOR PLAYING!");
 
 	objectives.emplace_back(std::make_pair(glm::vec3(player.transform->position.x, player.transform->position.y, player.transform->position.z), "Explore around!"));
@@ -591,6 +592,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
+	if (!game_over)	game_timer += elapsed;
 
 	if (game_state == PROLOGUE) {
 		if (((uint32_t) prologue_message) < prologue_messages.size()) return;
@@ -666,7 +668,7 @@ void PlayMode::update(float elapsed) {
 			view_scene = views::SHARK_APPROACH;
 			jump_up_velocity = jump_speed;
 			background_loop->stop();
-			background_loop = Sound::loop(*chase_sample, 0.45f, 0.0f);
+			background_loop = Sound::loop(*chase_sample, 0.4f, 0.0f);
 		}
 
 		// 4: Shark approaches player and player jumps and starts parkouring
@@ -712,7 +714,7 @@ void PlayMode::update(float elapsed) {
 				cinematic_edge_width = 0.0f;
 				chasing = true;
 				background_loop->stop();
-				background_loop = Sound::loop(*scary_sample, 0.5f, 0.0f);
+				background_loop = Sound::loop(*scary_sample, 0.4f, 0.0f);
 				return;
 			}
 			if (shark_indices()) {
@@ -1567,6 +1569,7 @@ void PlayMode::update(float elapsed) {
 			background_loop->stop();
 			background_loop = Sound::loop(*jazz_sample, 0.35f, 0.0f);
 			black_screen = true;
+			game_over = true;
 		}
 
 		//reset button press counters:
@@ -1700,6 +1703,12 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		}
 		else if (game_state == END) {
 			draw_str += end_messages[end_message];
+			if (end_message == end_messages.size() - 2) {
+				int min = int(game_timer / 60.0f);
+				int sec = int(game_timer - 60.0f * min);
+				int ms = int((game_timer - std::floor(game_timer))*100.0f);
+				draw_str += std::to_string(min) + ":" + std::to_string(sec) + ":" + std::to_string(ms);
+			}
 		}
 		else if (idx_message != -1)
 		{
@@ -2181,4 +2190,7 @@ void PlayMode::reset_game() {
 	end_message = 0;
 	view_scene = 0;
 	shark_timer = 0.0f;
+
+	game_timer = 0.0f;
+	game_over = false;
 }
