@@ -467,6 +467,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			else if (walkmesh == walkmesh_tutorial_level1) {
 				switch_scene((Scene&)*chase1_scene, (MeshBuffer&)*chase1_meshes, walkmesh_chase1);
 			}*/
+			switch_scene((Scene&)*level2_scene, (MeshBuffer&)*level2_meshes, walkmesh_level2);
+			game_state = NOTE;
+			cur_objective = 6;
 			return true;
 		}
 		else if (evt.key.keysym.sym == SDLK_r) {
@@ -813,9 +816,26 @@ void PlayMode::update(float elapsed) {
 			if (jump_move != glm::vec2(0.0f))
 			{
 				// if you are jumping and want to slow down
-				if (jump_move.y > 0 && jump_move.x == 0 && move.y < 0 && move.x == 0 && jump_PlayerSpeed > 0.0f)
+				//if (jump_move.y > 0 && jump_move.x == 0 && move.y < 0 && move.x == 0)
+				if (jump_move.y > 0 && move.y < 0)
 				{
-					jump_PlayerSpeed -= 0.5f;
+					jump_PlayerSpeed -= 0.25f;
+					jump_PlayerSpeed = std::max(jump_PlayerSpeed, 0.0f);
+				}
+				else if (jump_move.y < 0 && move.y > 0)
+				{
+					jump_PlayerSpeed -= 0.25f;
+					jump_PlayerSpeed = std::max(jump_PlayerSpeed, 0.0f);
+				}
+				else if (jump_move.x > 0 && move.x < 0)
+				{
+					jump_PlayerSpeed -= 0.25f;
+					jump_PlayerSpeed = std::max(jump_PlayerSpeed, 0.0f);
+				}
+				else if (jump_move.x < 0 && move.x > 0)
+				{
+					jump_PlayerSpeed -= 0.25f;
+					jump_PlayerSpeed = std::max(jump_PlayerSpeed, 0.0f);
 				}
 				jump_move = glm::normalize(jump_move + move / 20.0f);
 				move = jump_move * jump_PlayerSpeed * elapsed;
