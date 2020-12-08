@@ -1703,7 +1703,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		}
 		else if (game_state == END) {
 			draw_str += end_messages[end_message];
-			if (end_message == end_messages.size() - 2) {
+			if ((unsigned int) end_message == end_messages.size() - 2) {
 				int min = int(game_timer / 60.0f);
 				int sec = int(game_timer - 60.0f * min);
 				int ms = int((game_timer - std::floor(game_timer))*100.0f);
