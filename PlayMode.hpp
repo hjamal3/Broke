@@ -150,10 +150,7 @@ struct PlayMode : Mode {
 	enum Player_State {PAUSED, STILL, WALK, JUMP, SLIDE, CLIMB};
 	Player_State player_state = PAUSED;
 
-	enum Action_State { a_PAUSED, a_GROUND, a_JUMPING, a_PLATFORM, a_SLIDING, a_LAUNCHING, a_IN_AIR, a_CLIMBING};
-	Action_State action_state = a_GROUND;
-
-	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, PARKOUR, INTERLUDE, NOTE, SHORT_INTERLUDE, LAST_INTERLUDE, FINAL};
+	enum Game_State {PROLOGUE, PLAY, CUTSCENE, SHARKSCENE, INTERLUDE, NOTE, SHORT_INTERLUDE, LAST_INTERLUDE, FINAL};
 	Game_State game_state = PROLOGUE;
 
 	bool prologue = true;

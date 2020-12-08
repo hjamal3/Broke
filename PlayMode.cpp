@@ -1189,8 +1189,8 @@ void PlayMode::update(float elapsed) {
 		{
 			if (cur_objective == 4) {
 				// hardcoded end of parkour position to enter level 2
-				glm::vec3 diff = player.transform->position - glm::vec3(-17.9889f, 19.0369f, 4.99887f);
-				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 8.0f) {
+				glm::vec3 diff = player.transform->position - glm::vec3(-17.9889f, 27.0f, 0.0f);
+				if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 6.0f) {
 					game_state = INTERLUDE;
 					view_scene = 0;
 					black_screen = true;
