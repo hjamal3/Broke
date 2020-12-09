@@ -1048,9 +1048,10 @@ void PlayMode::update(float elapsed) {
 			// play a message depending on your position
 			for (int i = 0; i < 6; i++)
 			{
+				if (i == 5 && cur_objective < 3) continue;
 				// check if in range of something
 				glm::vec3 diff = player.transform->position - messages[i].first;
-				if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f))
+				if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 2.5f))
 				{
 					in_range = true;
 					// if not already there
@@ -1493,7 +1494,7 @@ void PlayMode::update(float elapsed) {
 		{
 			// check if in range of something
 			glm::vec3 diff = player.transform->position - messages[i].first;
-			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 1.0f))
+			if ((diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 12.0f))
 			{
 				in_range = true;
 				// if not already there
@@ -1765,11 +1766,11 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				}
 
 				if (can_climb) {
-					lines.draw_text("Press space, hold forward to climb",
+					lines.draw_text("Tap space, hold W to climb",
 						glm::vec3(-0.45, -0.4 - 1.1f * H, 0.0),
 						glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 						glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-					lines.draw_text("Press space, hold forward to climb",
+					lines.draw_text("Tap space, hold W to climb",
 						glm::vec3(-0.45 + ofs, -0.4 - 1.1f * H + ofs, 0.0),
 						glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 						glm::u8vec4(0xff, 0xff, 0xff, 0x00));
@@ -1956,6 +1957,7 @@ void PlayMode::push_tutorial_level1_messages() {
 void PlayMode::push_chasef_messages() {
 	// create some message objects. hardcoded for now
 	messages.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Press space to jump. You can slow down in the air by holding the opposite direction."));
+	messages.emplace_back(std::make_pair(glm::vec3(25.7f, 123.0f, 80.2f), "Jump over the wall to freedom!"));
 }
 
 void PlayMode::push_level2_messages() {
@@ -1983,6 +1985,9 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	climbing = false;
 	in_air = false;
 	on_platform = false;
+	PlayerSpeed = 0.0f;
+	sliding = false;
+	jump_first_time = false;
 
 	scene = cur_scene;
 	std::string str_collectable("i_");
