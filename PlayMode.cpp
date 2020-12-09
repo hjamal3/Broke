@@ -452,7 +452,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		}
 		else if (evt.key.keysym.sym == SDLK_r) {
-			if (idx_message == 0 && cur_objective == 6) {
+			if (idx_message == 0 && (cur_objective == 6 || cur_objective == 7)) {
 				game_state = NOTE;
 				note = true;
 			}
@@ -594,7 +594,8 @@ void PlayMode::update(float elapsed) {
 		if (((uint32_t) note_message) < note_messages.size()) return;
 		game_state = CUTSCENE;
 		view_scene = views::ENTRANCE_TO_KITCHEN;
-		cur_objective++;
+		cur_objective = 7;
+		note_message = 0;
 	}
 	else if (game_state == CUTSCENE)
 	{
@@ -691,6 +692,10 @@ void PlayMode::update(float elapsed) {
 	}
 	else if (game_state == PLAY)
 	{
+
+		if (climb_display_timer > 0.0f) {
+			climb_display_timer -= elapsed;
+		}
 
 		//combine inputs into a move:
 		glm::vec2 move = glm::vec2(0.0f);
@@ -955,6 +960,7 @@ void PlayMode::update(float elapsed) {
 										}
 										else {
 											can_climb = true;
+											climb_display_timer = 0.4f;
 										}
 									}
 								}
@@ -1656,23 +1662,35 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 
 		std::string draw_str = "";
+		glm::u8vec4 color;
 		// print message string
 		if (game_state == PROLOGUE) {
 			draw_str += prologue_messages[prologue_message];
+			color = glm::u8vec4(0,128,128,255);
 		}
 		else if (game_state == INTERLUDE) {
 			draw_str += interlude_messages[interlude_message];
+			color = glm::u8vec4(0,128,128,255);
 		}
 		else if (game_state == NOTE) {
 			draw_str += note_messages[note_message];
+			color = glm::u8vec4(0,128,128,255);
 		}
 		else if (game_state == CUTSCENE)
 		{
 			draw_str += "Press space to explore the map!";
+			color = glm::u8vec4(0,128,128,255);
 		}
 		else if (game_state == LAST_INTERLUDE)
 		{
 			draw_str += revelation_messages[revelation_message];
+			if (hexapus_indices()) {
+				color = glm::u8vec4(0,128,128,255);
+			} else if (fiance_indices()) {
+				color = glm::u8vec4(205,96,144,255);
+			} else {
+				color = glm::u8vec4(29,29,29,255);
+			}
 		}
 		else if (game_state == END) {
 			draw_str += end_messages[end_message];
@@ -1682,10 +1700,12 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				int ms = int((game_timer - std::floor(game_timer))*100.0f);
 				draw_str += std::to_string(min) + ":" + std::to_string(sec) + ":" + std::to_string(ms);
 			}
+			color = glm::u8vec4(0,128,128,255);
 		}
 		else if (idx_message != -1)
 		{
 			draw_str += messages[idx_message].second;
+			color = glm::u8vec4(0,128,128,255);
 		}
 
 		constexpr float H = 0.09f;
@@ -1700,7 +1720,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 		add_to_textbox(
 			glm::vec2(-aspect + 0.1f * H, -0.7 + 0.05f * H),
-			glm::vec2(draw_str.size() * H / 2.0f, 2.0f * H));
+			glm::vec2(draw_str.size() * H / 2.0f, 2.0f * H),
+			color);
 
 		if (!(game_state == PROLOGUE)) {
 			// draw objectives
@@ -1725,7 +1746,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				uint32_t max_len = objectives[cur_objective].second.size() > 9 ? (uint32_t)objectives[cur_objective].second.size() : 9;
 				add_to_textbox(
 					glm::vec2(-aspect + 0.1f * H, 0.95 - 1.1f * H),
-					glm::vec2(max_len * H / 2.0f, 1.5f * H));
+					glm::vec2(max_len * H / 2.0f, 1.5f * H),
+					glm::u8vec4(0,128,128,255));
 
 				if (cur_objective == 2) {
 					lines.draw_text("Treasures: " + std::to_string(ingredients_collected) + "/15",
@@ -1738,7 +1760,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 						glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 					add_to_textbox(
 						glm::vec2(-aspect + 0.1f * H, 0.7 - 1.1f * H),
-						glm::vec2(7.0f * H, 1.5f * H));
+						glm::vec2(7.0f * H, 1.5f * H),
+						glm::u8vec4(0,128,128,255));
 				} else if (cur_objective == 5) {
 					lines.draw_text("Treasures: " + std::to_string(ingredients_collected) + "/20",
 						glm::vec3(-aspect + 0.1f * H, 0.7 - 1.1f * H, 0.0),
@@ -1750,7 +1773,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 						glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 					add_to_textbox(
 						glm::vec2(-aspect + 0.1f * H, 0.7 - 1.1f * H),
-						glm::vec2(7.0f * H, 1.5f * H));
+						glm::vec2(7.0f * H, 1.5f * H),
+						glm::u8vec4(0,128,128,255));
 				} else if (cur_objective == 8) {
 					lines.draw_text("Treasures: " + std::to_string(ingredients_collected) + "/20",
 						glm::vec3(-aspect + 0.1f * H, 0.7 - 1.1f * H, 0.0),
@@ -1762,14 +1786,15 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 						glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 					add_to_textbox(
 						glm::vec2(-aspect + 0.1f * H, 0.7 - 1.1f * H),
-						glm::vec2(7.0f * H, 1.5f * H));
+						glm::vec2(7.0f * H, 1.5f * H),
+						glm::u8vec4(0,128,128,255));
 				}
 
-				if (can_climb) {
+				if (climb_display_timer > 0.0f) {
 					lines.draw_text("Tap space, hold W to climb",
 						glm::vec3(-0.45, -0.4 - 1.1f * H, 0.0),
 						glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-						glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+						glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 					lines.draw_text("Tap space, hold W to climb",
 						glm::vec3(-0.45 + ofs, -0.4 - 1.1f * H + ofs, 0.0),
 						glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
@@ -1849,10 +1874,8 @@ void PlayMode::step_in_mesh(glm::vec3& remain)
 	}
 }
 
-void PlayMode::add_to_textbox(glm::vec2 center, glm::vec2 radius)
+void PlayMode::add_to_textbox(glm::vec2 center, glm::vec2 radius, glm::u8vec4 color)
 {
-
-	auto color = glm::u8vec4(0,128,128,255);
 
 	textbox.emplace_back(glm::vec3(center.x-radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
 	textbox.emplace_back(glm::vec3(center.x+radius.x, center.y-radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
@@ -2130,6 +2153,15 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 
 bool PlayMode::shark_indices() {
 	return (revelation_message >= 3 && revelation_message <= 14) || revelation_message == 19;
+}
+
+bool PlayMode::fiance_indices() {
+	return revelation_message >= 15 && revelation_message <= 18;
+}
+
+bool PlayMode::hexapus_indices() {
+	return (revelation_message >= 0 && revelation_message <= 2) || revelation_message == 4 ||
+		   revelation_message == 14 || revelation_message == 18;
 }
 
 void PlayMode::reset_game() {

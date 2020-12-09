@@ -22,7 +22,7 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 	void step_in_3D(glm::vec3& pos, glm::quat& rot);
 	void step_in_mesh(glm::vec3& remain);
-	void add_to_textbox(glm::vec2 center, glm::vec2 radius);
+	void add_to_textbox(glm::vec2 center, glm::vec2 radius, glm::u8vec4 color);
 	void draw_textbox(float aspect);
 	void add_cinematic_edges(float x, float y);
 	void add_black_screen(float x, float y);
@@ -30,6 +30,8 @@ struct PlayMode : Mode {
 	void push_level2_messages();
 	void push_chasef_messages();
 	bool shark_indices();
+	bool fiance_indices();
+	bool hexapus_indices();
 
 	// scene switching function that changes from one level to another
 	void switch_scene(Scene& scene, MeshBuffer& mesh, WalkMesh const * walkmesh);
@@ -80,6 +82,7 @@ struct PlayMode : Mode {
 	bool climbing = false;
 	float climb_speed = 4.0f;
 	bool can_climb = false;
+	float climb_display_timer = 0.4f;
 
 	// camera control
 	void update_camera();
