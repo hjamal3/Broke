@@ -1415,6 +1415,7 @@ void PlayMode::update(float elapsed) {
 		bool collision = false;
 		for (Collision::AABB& p : obstacles)
 		{
+			bool landed_on_platform = false;
 			int collision_x_or_y = Collision::testCollision(p, player_box);
 			if (collision_x_or_y && obstacle_box != &p)
 			{
@@ -1437,6 +1438,7 @@ void PlayMode::update(float elapsed) {
 						obstacle_box = &p;
 						jumping = false;
 						land_sound = Sound::play(*land_sample, 1.0f);
+						landed_on_platform = true;
 					}
 				}
 				player.at = before; // revert position
@@ -1464,6 +1466,17 @@ void PlayMode::update(float elapsed) {
 				on_platform = false;
 				obstacle_box = nullptr;
 			}
+
+			// slow down speeds upon collision, except when landing on platforms
+			if (!landed_on_platform)
+			{
+				speed_multiplier = low_speed * 3.0f;
+				if (in_air)
+				{
+					jump_PlayerSpeed = PlayerSpeedMax * low_speed;
+				}
+			}
+
 		}
 		if (!collision)
 		{
