@@ -397,7 +397,7 @@ PlayMode::PlayMode() {
 	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Find a clue as to what to do next."));
 	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Slide into Palace of Umami."));
 	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "Collect the last of the treasures in Fiance's note."));
-	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "PARKOUR UP THE TWO TOWERS TO ESCAPE THE CMU ROBOT!!"));
+	objectives.emplace_back(std::make_pair(glm::vec3(0.0f, 0.0f, 0.0f), "PARKOUR UP THE TWO TOWERS TO ESCAPE TO THE OCEAN!!"));
 
 	// camera position, target position
 	cut_scenes.insert(std::make_pair(views::SHARK_TANK,std::make_pair(glm::vec3(-12.0f, -35.0, 10.0f), glm::vec3(-16, -29, 3.0f))));
