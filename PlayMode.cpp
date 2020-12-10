@@ -1458,6 +1458,16 @@ void PlayMode::update(float elapsed) {
 				step_in_3D(temp_pos, temp_rot);
 				temp_pos.z = temp_pos.z + z_relative;
 
+				// slow down speeds upon collision, except when landing on platforms
+				if (!landed_on_platform)
+				{
+					speed_multiplier = low_speed * 3.0f;
+					if (in_air)
+					{
+						jump_PlayerSpeed = PlayerSpeedMax * low_speed;
+					}
+				}
+
 			}
 
 			// on platform but no collision with the obstacle, enable falling
@@ -1465,16 +1475,6 @@ void PlayMode::update(float elapsed) {
 				in_air = true;
 				on_platform = false;
 				obstacle_box = nullptr;
-			}
-
-			// slow down speeds upon collision, except when landing on platforms
-			if (!landed_on_platform)
-			{
-				speed_multiplier = low_speed * 3.0f;
-				if (in_air)
-				{
-					jump_PlayerSpeed = PlayerSpeedMax * low_speed;
-				}
 			}
 
 		}
