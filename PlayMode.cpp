@@ -1406,7 +1406,7 @@ void PlayMode::update(float elapsed) {
 
 		// check if the new position leads to a collision
 		// create player bounding box
-		float player_height = 2.0f;
+		float player_height = 0.75f;
 		Collision::AABB player_box = Collision::AABB(temp_pos, { 0.5f,0.75f,player_height });
 		player_box.c.z += player_box.r.z - 0.001f; // hardcode z-offset because in blender frame is at bottom
 		bool reset_pos = false;
