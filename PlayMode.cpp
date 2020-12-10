@@ -2017,6 +2017,7 @@ void PlayMode::switch_scene(Scene& cur_scene, MeshBuffer& cur_mesh, WalkMesh con
 	PlayerSpeed = 0.0f;
 	sliding = false;
 	jump_first_time = false;
+	climb_display_timer = 0.0f;
 
 	scene = cur_scene;
 	std::string str_collectable("i_");
