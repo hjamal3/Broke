@@ -1001,7 +1001,15 @@ void PlayMode::update(float elapsed) {
 					temp_pos.z = temp_pos.z + z_relative;
 
 					// slow down speeds upon collision, except when landing on platforms
-					if (!landed_on_platform) speed_multiplier = low_speed;
+					if (!landed_on_platform)
+					{
+						speed_multiplier = low_speed*3.0f;
+
+						if (in_air)
+						{
+							jump_PlayerSpeed = PlayerSpeedMax*low_speed;
+						}
+					}
 				}
 
 				// on platform but no collision with the obstacle, enable falling
