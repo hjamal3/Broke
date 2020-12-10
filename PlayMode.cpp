@@ -949,9 +949,10 @@ void PlayMode::update(float elapsed) {
 			{
 				int collision_x_or_y = Collision::testCollision(p, player_box);
 				if (collision_x_or_y && obstacle_box != &p)
-				{
+				{	
 					collision = true;
 					float obstacle_height = p.c.z + p.r.z;
+					bool landed_on_platform = false;
 					if (in_air) {
 						// if the top of player hits bottom of obstacle, set velocity to 0.0f
 						if (jump_up_velocity > 0 && p.c.z - p.r.z <= player_box.c.z + player_box.r.z &&
@@ -969,8 +970,11 @@ void PlayMode::update(float elapsed) {
 							obstacle_box = &p;
 							jumping = false;
 							land_sound = Sound::play(*land_sample, 1.0f);
+							landed_on_platform = true;
 						}
-						else {
+						// climb the obstacle if close enough!
+						else 
+						{
 							// Check for two things:
 							// - Player is sufficiently close to the edge of the platform vertically
 							// - Jump key has been released from the previous press
@@ -1027,6 +1031,8 @@ void PlayMode::update(float elapsed) {
 					step_in_3D(temp_pos, temp_rot);
 					temp_pos.z = temp_pos.z + z_relative;
 
+					// slow down speeds upon collision, except when landing on platforms
+					if (!landed_on_platform) speed_multiplier = low_speed;
 				}
 
 				// on platform but no collision with the obstacle, enable falling
